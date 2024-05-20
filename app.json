@@ -1,0 +1,51 @@
+{
+  "id": "9bcc50e9-5022-4030-bd3c-b4cdad4ff719",
+  "name": "Interim WMS Tasklet Customisation",
+  "publisher": "Robosol",
+  "version": "24.0.0.1",
+  "brief": "",
+  "description": "",
+  "privacyStatement": "",
+  "EULA": "",
+  "help": "",
+  "url": "",
+  "logo": "",
+  "dependencies": [
+    {
+      "id": "a5727ce6-368c-49e2-84cb-1a6052f0551c",
+      "name": "Mobile WMS",
+      "publisher": "Tasklet Factory",
+      "version": "5.40.200.227"
+    },
+    {
+      "id": "89b2d3ff-cff9-4506-9a14-597a5b6d370f",
+      "name": "Interim WMS BC Customisation",
+      "publisher": "Robosol",
+      "version": "24.0.0.1"
+    },
+    {
+      "id": "0a10dfb9-c53c-4222-9ca2-25758f9ff410",
+      "name": "Pharma Documents",
+      "publisher": "Robosol",
+      "version": "24.0.0.0"
+    }
+  ],
+  "screenshots": [],
+  "platform": "1.0.0.0",
+  "application": "23.0.0.0",
+  "idRanges": [
+    {
+      "from": 50300,
+      "to": 50500
+    }
+  ],
+  "resourceExposurePolicy": {
+    "allowDebugging": true,
+    "allowDownloadingSource": true,
+    "includeSourceInSymbolFile": true
+  },
+  "runtime": "13.0",
+  "features": [
+    "NoImplicitWith"
+  ]
+}
