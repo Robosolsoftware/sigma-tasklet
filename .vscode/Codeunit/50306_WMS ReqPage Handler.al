@@ -1,53 +1,55 @@
 codeunit 50306 "WMS ReqPage Handler"
 {
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB Report Print Lookup", 'OnLookupOnPrintReport_OnAddStepsForReport', '', true, true)]
-    local procedure OnLookupOnPrintReport_OnAddStepsForReport(_MobReport: Record "MOB Report"; var _RequestValues: Record "MOB NS Request Element"; _SourceRecRef: RecordRef; var _Steps: Record "MOB Steps Element"; var _IsHandled: Boolean)
-    var
-        MobReportPrintSteps: Codeunit "MOB Report Print Lookup";
-        ItemNo: Text;
-    begin
-        if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"Sales Invoice (Order)" then
-            exit;
-        _Steps.Create_TextStep(10, 'SalesOrderNo');
-        _Steps.Set_header('Sales Order No');
-        _Steps.Set_label('Sales Order No:');
+    //We dont required to print KNAAP Invoice from Scanner+++
+    // [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB Report Print Lookup", 'OnLookupOnPrintReport_OnAddStepsForReport', '', true, true)]
+    // local procedure OnLookupOnPrintReport_OnAddStepsForReport(_MobReport: Record "MOB Report"; var _RequestValues: Record "MOB NS Request Element"; _SourceRecRef: RecordRef; var _Steps: Record "MOB Steps Element"; var _IsHandled: Boolean)
+    // var
+    //     MobReportPrintSteps: Codeunit "MOB Report Print Lookup";
+    //     ItemNo: Text;
+    // begin
+    //     if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"Sales Invoice (Order)" then
+    //         exit;
+    //     _Steps.Create_TextStep(10, 'SalesOrderNo');
+    //     _Steps.Set_header('Sales Order No');
+    //     _Steps.Set_label('Sales Order No:');
 
-        _Steps.Create_TextStep(20, 'NoOfCopies');
-        _Steps.Set_header('No Of Copies');
-        _Steps.Set_label('No Of Copies:');
+    //     _Steps.Create_TextStep(20, 'NoOfCopies');
+    //     _Steps.Set_header('No Of Copies');
+    //     _Steps.Set_label('No Of Copies:');
 
-        MobReportPrintSteps.CreateReportPrinterAndNoOfCopiesSteps(_MobReport, _RequestValues, _Steps, 90, 0);
-        _IsHandled := true;
-    end;
+    //     MobReportPrintSteps.CreateReportPrinterAndNoOfCopiesSteps(_MobReport, _RequestValues, _Steps, 90, 0);
+    //     _IsHandled := true;
+    // end;
 
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB ReportParameters Mgt.", 'OnCreateReportParameters', '', true, true)]
-    local procedure OnCreateReportParameters(_MobReport: Record "Mob Report"; _SourceRecRef: RecordRef; var _RequestValues: Record "MOB NS Request Element" temporary; var _OptionsFieldValues: Record "MOB ReportParameters Element"; var _DataItemViews: Record "MOB ReportParameters Element"; var _IsHandled: Boolean)
-    var
-        SalesHeader: Record "Sales Header";
-        Item: Record Item;
-        L_GetNoofCopy: Integer;
-        L_SetNoofCopy: Integer;
-    begin
-        Clear(L_GetNoofCopy);
-        Clear(L_SetNoofCopy);
-        if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"Sales Invoice (Order)" then
-            exit;
-        SalesHeader.Reset();
-        SalesHeader.SetRange("Document Type", SalesHeader."Document Type"::Order);
-        SalesHeader.SetRange("No.", _RequestValues.GetValue('SalesOrderNo'));
-        if SalesHeader.FindFirst() then begin
-            _DataItemViews.SetValue('Sales Header', SalesHeader.GetView(false));
-            Evaluate(L_GetNoofCopy, _RequestValues.GetValue('NoOfCopies'));
-            if L_GetNoofCopy = 1 then
-                L_SetNoofCopy := 0
-            else
-                L_SetNoofCopy := L_GetNoofCopy;
-            _OptionsFieldValues.SetValue('NoOfCopies', L_SetNoofCopy);
-        end;
+    // [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB ReportParameters Mgt.", 'OnCreateReportParameters', '', true, true)]
+    // local procedure OnCreateReportParameters(_MobReport: Record "Mob Report"; _SourceRecRef: RecordRef; var _RequestValues: Record "MOB NS Request Element" temporary; var _OptionsFieldValues: Record "MOB ReportParameters Element"; var _DataItemViews: Record "MOB ReportParameters Element"; var _IsHandled: Boolean)
+    // var
+    //     SalesHeader: Record "Sales Header";
+    //     Item: Record Item;
+    //     L_GetNoofCopy: Integer;
+    //     L_SetNoofCopy: Integer;
+    // begin
+    //     Clear(L_GetNoofCopy);
+    //     Clear(L_SetNoofCopy);
+    //     if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"Sales Invoice (Order)" then
+    //         exit;
+    //     SalesHeader.Reset();
+    //     SalesHeader.SetRange("Document Type", SalesHeader."Document Type"::Order);
+    //     SalesHeader.SetRange("No.", _RequestValues.GetValue('SalesOrderNo'));
+    //     if SalesHeader.FindFirst() then begin
+    //         _DataItemViews.SetValue('Sales Header', SalesHeader.GetView(false));
+    //         Evaluate(L_GetNoofCopy, _RequestValues.GetValue('NoOfCopies'));
+    //         if L_GetNoofCopy = 1 then
+    //             L_SetNoofCopy := 0
+    //         else
+    //             L_SetNoofCopy := L_GetNoofCopy;
+    //         _OptionsFieldValues.SetValue('NoOfCopies', L_SetNoofCopy);
+    //     end;
 
 
-        _IsHandled := true;
-    end;
+    //     _IsHandled := true;
+    // end;
+    //We dont required to print KNAAP Invoice from Scanner+++
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB Report Print Lookup", 'OnLookupOnPrintReport_OnAddStepsForReport', '', true, true)]
     local procedure OnLookupOnPrintReport_OnAddStepsForReportInvoice(_MobReport: Record "MOB Report"; var _RequestValues: Record "MOB NS Request Element"; _SourceRecRef: RecordRef; var _Steps: Record "MOB Steps Element"; var _IsHandled: Boolean)
@@ -87,7 +89,6 @@ codeunit 50306 "WMS ReqPage Handler"
         SalesInvoiceHeader.SetRange("Order No.", _RequestValues.GetValue('SalesOrderNo'));
         if SalesInvoiceHeader.FindSet() then begin
             _DataItemViews.SetValue('Sales Invoice Header', SalesInvoiceHeader.GetView(false));
-            //_OptionsFieldValues.SetValue('NoOfCopies', _RequestValues.GetValue('NoOfCopies'));
             Evaluate(L_GetNoofCopy, _RequestValues.GetValue('NoOfCopies'));
             if L_GetNoofCopy = 1 then
                 L_SetNoofCopy := 0
@@ -206,8 +207,8 @@ codeunit 50306 "WMS ReqPage Handler"
         MOBReport: Record "MOB Report";
         MOBReportPrinterReport: Record "MOB Report Printer Report";
         Report60039: report Label;
-        Report60040: report "Sales Invoice (Order)";
-        Rep60040: Label '<?xml version="1.0" standalone="yes"?><ReportParameters name="Sales Invoice (Order)" id="60040"><Options><Field name="NoOfCopies">0</Field></Options><DataItems><DataItem name="Sales Header">VERSION(1) SORTING(Field1,Field3) WHERE(Field1=1(1),Field3=1(%1))</DataItem><DataItem name="CopyLoop">VERSION(1) SORTING(Field1)</DataItem><DataItem name="PageLoop">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Sales Line">VERSION(1) SORTING(Field1,Field3,Field4)</DataItem><DataItem name="RoundLoop">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Integer">VERSION(1) SORTING(Field1)</DataItem><DataItem name="VATCounter">VERSION(1) SORTING(Field1)</DataItem></DataItems></ReportParameters>';
+        //Report60040: report "Sales Invoice (Order)";
+        //Rep60040: Label '<?xml version="1.0" standalone="yes"?><ReportParameters name="Sales Invoice (Order)" id="60040"><Options><Field name="NoOfCopies">0</Field></Options><DataItems><DataItem name="Sales Header">VERSION(1) SORTING(Field1,Field3) WHERE(Field1=1(1),Field3=1(%1))</DataItem><DataItem name="CopyLoop">VERSION(1) SORTING(Field1)</DataItem><DataItem name="PageLoop">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Sales Line">VERSION(1) SORTING(Field1,Field3,Field4)</DataItem><DataItem name="RoundLoop">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Integer">VERSION(1) SORTING(Field1)</DataItem><DataItem name="VATCounter">VERSION(1) SORTING(Field1)</DataItem></DataItems></ReportParameters>';
         Rep60039: Label '<?xml version="1.0" standalone="yes"?><ReportParameters name="Label" id="60039"><Options><Field name="NoOfCopies">%1</Field></Options><DataItems><DataItem name="Sales Header">VERSION(1) SORTING(Field1,Field3) WHERE(Field1=1(1),Field3=1(%2))</DataItem><DataItem name="CopyLoop">VERSION(1) SORTING(Field1)</DataItem></DataItems></ReportParameters>';
         L_SalesHeader: Record "Sales Header";
     begin
@@ -222,8 +223,6 @@ codeunit 50306 "WMS ReqPage Handler"
                     if MOBReportPrinterReport.FindFirst() then begin
                         if MOBReport."Report ID" = 60039 then
                             Report60039.Print(StrSubstNo(Rep60039, SalesHeader."No of Boxes", SalesHeader."No."), MOBReportPrinterReport."Printer Name");
-                        /*if MOBReport."Report ID" = 60040 then
-                            Report60040.Print(StrSubstNo(Rep60040, SalesHeader."No."), MOBReportPrinterReport."Printer Name");*/
                     end;
                 until MOBReport.Next() = 0;
         end;
@@ -285,11 +284,11 @@ codeunit 50306 "WMS ReqPage Handler"
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Sales-Post", 'OnAfterPostSalesDoc', '', true, true)]
     local procedure OnAfterPostSalesDoc(SalesInvHdrNo: Code[20])
     var
-        Report60034: report "SalesInvoice SI";
+        Report60044: report "Sales - Invoice Copy";
         MOBReport: Record "MOB Report";
         MOBReportPrinterReport: Record "MOB Report Printer Report";
         SalesInvoiceHeader: Record "Sales Invoice Header";
-        Rep60034: Label '<?xml version="1.0" standalone="yes"?><ReportParameters name="SalesInvoice SI" id="60034"><Options><Field name="NoOfCopies">%1</Field><Field name="ShowInternalInfo">false</Field><Field name="ArchiveDocument">false</Field><Field name="LogInteraction">false</Field><Field name="CurrencyLCY">false</Field></Options><DataItems><DataItem name="Sales Invoice Header">VERSION(1) SORTING(Field3) WHERE(Field3=1(%2))</DataItem><DataItem name="CopyLoop">VERSION(1) SORTING(Field1)</DataItem><DataItem name="PageLoop">VERSION(1) SORTING(Field1)</DataItem><DataItem name="DimensionLoop1">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Sales Invoice Line">VERSION(1) SORTING(Field3,Field4)</DataItem><DataItem name="Sales Shipment Buffer">VERSION(1) SORTING(Field1)</DataItem><DataItem name="DimensionLoop2">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Integer">VERSION(1) SORTING(Field1)</DataItem><DataItem name="VATCounter">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Total">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Integer2">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Total2">VERSION(1) SORTING(Field1)</DataItem></DataItems></ReportParameters>';
+        Rep60034: Label '<?xml version="1.0" standalone="yes"?><ReportParameters name="SalesInvoice SI" id="60044"><Options><Field name="NoOfCopies">%1</Field><Field name="ShowInternalInfo">false</Field><Field name="ArchiveDocument">false</Field><Field name="LogInteraction">false</Field><Field name="CurrencyLCY">false</Field></Options><DataItems><DataItem name="Sales Invoice Header">VERSION(1) SORTING(Field3) WHERE(Field3=1(%2))</DataItem><DataItem name="CopyLoop">VERSION(1) SORTING(Field1)</DataItem><DataItem name="PageLoop">VERSION(1) SORTING(Field1)</DataItem><DataItem name="DimensionLoop1">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Sales Invoice Line">VERSION(1) SORTING(Field3,Field4)</DataItem><DataItem name="Sales Shipment Buffer">VERSION(1) SORTING(Field1)</DataItem><DataItem name="DimensionLoop2">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Integer">VERSION(1) SORTING(Field1)</DataItem><DataItem name="VATCounter">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Total">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Integer2">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Total2">VERSION(1) SORTING(Field1)</DataItem></DataItems></ReportParameters>';
     begin
         SalesInvoiceHeader.Reset();
         SalesInvoiceHeader.SetRange("No.", SalesInvHdrNo);
@@ -301,8 +300,8 @@ codeunit 50306 "WMS ReqPage Handler"
                     MOBReportPrinterReport.Reset();
                     MOBReportPrinterReport.SetRange("Report Display Name", MOBReport."Display Name");
                     if MOBReportPrinterReport.FindFirst() then begin
-                        if MOBReport."Report ID" = 60034 then
-                            Report60034.Print(StrSubstNo(Rep60034, SalesInvoiceHeader."No of Boxes", SalesInvoiceHeader."No."), MOBReportPrinterReport."Printer Name");
+                        if MOBReport."Report ID" = 60044 then
+                            Report60044.Print(StrSubstNo(Rep60034, SalesInvoiceHeader."No of Boxes", SalesInvoiceHeader."No."), MOBReportPrinterReport."Printer Name");
                     end;
                 until MOBReport.Next() = 0;
         end;
