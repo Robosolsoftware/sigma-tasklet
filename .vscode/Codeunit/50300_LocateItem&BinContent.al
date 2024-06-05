@@ -14,7 +14,8 @@ codeunit 50300 LocateItemANDBinContent
         _HeaderFields.InitConfigurationKey('LocateItemHeader');
         _HeaderFields.Create_ListField_FilterLocationAsLocation(10);
         _HeaderFields.Create_TextField_ItemNumber(20);
-        _HeaderFields.Create_TextField_LotNumber(21);
+        _HeaderFields.Create_TextField_Bin(21);
+        _HeaderFields.Create_TextField_LotNumber(22);
         _HeaderFields.Set_optional(true);
         //LocateItem----------------------------------------------------------
 
@@ -80,11 +81,16 @@ codeunit 50300 LocateItemANDBinContent
         ExpiryDate: Date;
         Check_Location: Code[20];
         MobSessionData: Codeunit "MOB SessionData";
+
+        ScannedBin: Text;
+        BinCode: Code[20];
     begin
         ScannedItemNumber := _RequestValues.GetValue('ItemNumber', true);
         ItemNumber := MobItemReferenceMgt.SearchItemReference(MobToolbox.ReadEAN(ScannedItemNumber), VariantCode);
         LocationCode := _RequestValues.GetValue('Location', true);
         lotno := _RequestValues.Get_LotNumber();
+        ScannedBin := _RequestValues.GetValue('Bin', true);
+        BinCode := MobToolbox.ReadBin(ScannedBin);
 
 
 
@@ -107,6 +113,8 @@ codeunit 50300 LocateItemANDBinContent
                     BinContent.SetFilter("Item No.", ItemNumber);  // Support wildcard search
                     if VariantCode <> '' then
                         BinContent.SetRange("Variant Code", VariantCode);
+                    if BinCode <> '' then
+                        BinContent.SetRange("Bin Code", BinCode);
                     BinContent.SetFilter("Location Code", Location.Code);
                     BinContent.SetFilter(Quantity, '>0');
                     //BinContent.SetRange("Lot No. Filter", lotno);
@@ -273,7 +281,7 @@ _ExpirationDate: Date; var
         _LookupResponseElement.Set_DisplayLine3(MobWmsLanguage.GetMessage('UOM_LABEL') + ': ' + _BinContent."Unit of Measure Code");
         _LookupResponseElement.Set_DisplayLine4(_BinContent."Variant Code" <> '', MobWmsLanguage.GetMessage('VARIANT_LABEL') + ': ' + _BinContent."Variant Code", '' + MobToolbox.CRLFSeparator() + test1 + MobToolbox.CRLFSeparator() + MobWmsLanguage.GetMessage('BIN') + ':' + _BinContent."Bin Code");
         //_LookupResponseElement.Set_DisplayLine5(test1);
-        //_LookupResponseElement.Set_DisplayLine5(_BinContent."Bin Code");
+        _LookupResponseElement.Set_DisplayLine5(_BinContent."Bin Code");
         _LookupResponseElement.Set_ExtraInfo1(Format(_BinContent.Quantity, 0, 9));
         _LookupResponseElement.Set_ExtraInfo2('');
         _LookupResponseElement.Set_ExtraInfo3('');
