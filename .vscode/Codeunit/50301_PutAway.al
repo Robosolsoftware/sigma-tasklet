@@ -46,7 +46,8 @@ codeunit 50301 "PutAway Module"
         _HeaderFields.Set_optional(true);
         _HeaderFields.Save();
 
-        _HeaderFields.Create_IntegerField(16, 'SourceNo', 'Source No');
+        //_HeaderFields.Create_IntegerField(16, 'SourceNo', 'Source No');
+        _HeaderFields.Create_TextField(16, 'SourceNo', 'Source No');
         _HeaderFields.Set_optional(true);
         _HeaderFields.Save();
 
@@ -77,7 +78,7 @@ codeunit 50301 "PutAway Module"
                     if _HeaderFilter.Value <> '' then begin
                         L_warehouseLine.Reset();
                         L_warehouseLine.SetRange("Source No.", _HeaderFilter.Value);
-                        L_warehouseLine.SetRange("Activity Type", L_warehouseLine."Activity Type"::"Put-away");
+                        L_warehouseLine.SetFilter("Activity Type", '%1|%2', L_warehouseLine."Activity Type"::"Put-away", L_warehouseLine."Activity Type"::"Invt. Put-away");
                         if L_warehouseLine.FindFirst() then begin
                             _WhseActivityHeader.SetRange("No.", L_warehouseLine."No.");
                         end else
