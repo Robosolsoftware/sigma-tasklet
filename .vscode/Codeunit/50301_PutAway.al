@@ -16,7 +16,25 @@ codeunit 50301 "PutAway Module"
         case _WhseActLineTake."Activity Type" of
             _WhseActLineTake."Activity Type"::"Put-away":
                 begin
+                    //Remove Sugessted To Bin Code++
                     _BaseOrderLineElement.Set_ToBin('');
+
+
+
+                    //Add "Variant Code"++
+                    _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Variant Code : %1', _WhseActLineTake."Variant Code"));
+
+                    _BaseOrderLineElement.Modify();
+                end;
+            _WhseActLineTake."Activity Type"::"Invt. Put-away":
+                begin
+                    //Remove Sugessted To Bin Code++
+                    _BaseOrderLineElement.Set_ToBin('');
+
+
+                    //Add "Variant Code"++
+                    _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Variant Code : %1', _WhseActLineTake."Variant Code"));
+
                     _BaseOrderLineElement.Modify();
                 end;
         end;
