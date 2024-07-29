@@ -301,7 +301,7 @@ codeunit 50306 "WMS ReqPage Handler"
                     MOBReportPrinterReport.SetRange("Report Display Name", MOBReport."Display Name");
                     if MOBReportPrinterReport.FindFirst() then begin
                         if MOBReport."Report ID" = 60044 then
-                            Report60044.Print(StrSubstNo(Rep60034, SalesInvoiceHeader."No of Boxes", SalesInvoiceHeader."No."), MOBReportPrinterReport."Printer Name");
+                            Report60044.Print(StrSubstNo(Rep60034, 0, SalesInvoiceHeader."No."), MOBReportPrinterReport."Printer Name"); //SalesInvoiceHeader."No of Boxes"
                     end;
                 until MOBReport.Next() = 0;
         end;
