@@ -63,9 +63,11 @@ codeunit 50306 "WMS ReqPage Handler"
         _Steps.Set_header('Sales Order No');
         _Steps.Set_label('Sales Order No:');
 
-        _Steps.Create_TextStep(20, 'NoOfCopies');
+        _Steps.Create_IntegerStep(20, 'NoOfCopies');
         _Steps.Set_header('No Of Copies');
         _Steps.Set_label('No Of Copies:');
+        _Steps.Set_defaultValue(1);
+        _Steps.Set_minValue(1);
 
         MobReportPrintSteps.CreateReportPrinterAndNoOfCopiesSteps(_MobReport, _RequestValues, _Steps, 90, 0);
         _IsHandled := true;
@@ -111,9 +113,11 @@ codeunit 50306 "WMS ReqPage Handler"
         _Steps.Set_header('Sales Order No');
         _Steps.Set_label('Sales Order No:');
 
-        _Steps.Create_TextStep(20, 'NoOfCopies');
+        _Steps.Create_IntegerStep(20, 'NoOfCopies');
         _Steps.Set_header('No Of Copies');
         _Steps.Set_label('No Of Copies:');
+        _Steps.Set_defaultValue(1);
+        _Steps.Set_minValue(1);
 
         MobReportPrintSteps.CreateReportPrinterAndNoOfCopiesSteps(_MobReport, _RequestValues, _Steps, 90, 0);
         _IsHandled := true;
@@ -211,6 +215,7 @@ codeunit 50306 "WMS ReqPage Handler"
         //Rep60040: Label '<?xml version="1.0" standalone="yes"?><ReportParameters name="Sales Invoice (Order)" id="60040"><Options><Field name="NoOfCopies">0</Field></Options><DataItems><DataItem name="Sales Header">VERSION(1) SORTING(Field1,Field3) WHERE(Field1=1(1),Field3=1(%1))</DataItem><DataItem name="CopyLoop">VERSION(1) SORTING(Field1)</DataItem><DataItem name="PageLoop">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Sales Line">VERSION(1) SORTING(Field1,Field3,Field4)</DataItem><DataItem name="RoundLoop">VERSION(1) SORTING(Field1)</DataItem><DataItem name="Integer">VERSION(1) SORTING(Field1)</DataItem><DataItem name="VATCounter">VERSION(1) SORTING(Field1)</DataItem></DataItems></ReportParameters>';
         Rep60039: Label '<?xml version="1.0" standalone="yes"?><ReportParameters name="Label" id="60039"><Options><Field name="NoOfCopies">%1</Field></Options><DataItems><DataItem name="Sales Header">VERSION(1) SORTING(Field1,Field3) WHERE(Field1=1(1),Field3=1(%2))</DataItem><DataItem name="CopyLoop">VERSION(1) SORTING(Field1)</DataItem></DataItems></ReportParameters>';
         L_SalesHeader: Record "Sales Header";
+        L_SetNoofCopy: Integer;
     begin
         if SalesHeader."Document Type" = SalesHeader."Document Type"::Order then begin
             L_RecRef.getTable(SalesHeader);
@@ -218,11 +223,19 @@ codeunit 50306 "WMS ReqPage Handler"
             MOBReport.SetRange(Enabled, true);
             if MOBReport.FindSet() then
                 repeat
-                    MOBReportPrinterReport.Reset();
-                    MOBReportPrinterReport.SetRange("Report Display Name", MOBReport."Display Name");
-                    if MOBReportPrinterReport.FindFirst() then begin
-                        if MOBReport."Report ID" = 60039 then
-                            Report60039.Print(StrSubstNo(Rep60039, SalesHeader."No of Boxes", SalesHeader."No."), MOBReportPrinterReport."Printer Name");
+                    if MOBReport."Auto Print" = true then begin
+                        MOBReportPrinterReport.Reset();
+                        MOBReportPrinterReport.SetRange("Report Display Name", MOBReport."Display Name");
+                        if MOBReportPrinterReport.FindFirst() then begin
+                            if MOBReport."Report ID" = 60039 then begin
+                                Clear(L_SetNoofCopy);
+                                if SalesHeader."No of Boxes" = 1 then
+                                    L_SetNoofCopy := 0
+                                else
+                                    L_SetNoofCopy := SalesHeader."No of Boxes";
+                                Report60039.Print(StrSubstNo(Rep60039, L_SetNoofCopy, SalesHeader."No."), MOBReportPrinterReport."Printer Name");
+                            end;
+                        end;
                     end;
                 until MOBReport.Next() = 0;
         end;
@@ -239,6 +252,8 @@ codeunit 50306 "WMS ReqPage Handler"
             _StepsElement.Create_IntegerStep(10000, 'NoofBoxes');
             _StepsElement.Set_header('No. of Boxes');
             _StepsElement.Set_label('No. of Boxes:');
+            _StepsElement.Set_defaultValue(1);
+            _StepsElement.Set_minValue(1);
         end;
     end;
 
@@ -297,11 +312,13 @@ codeunit 50306 "WMS ReqPage Handler"
             MOBReport.SetRange(Enabled, true);
             if MOBReport.FindSet() then
                 repeat
-                    MOBReportPrinterReport.Reset();
-                    MOBReportPrinterReport.SetRange("Report Display Name", MOBReport."Display Name");
-                    if MOBReportPrinterReport.FindFirst() then begin
-                        if MOBReport."Report ID" = 60044 then
-                            Report60044.Print(StrSubstNo(Rep60034, 0, SalesInvoiceHeader."No."), MOBReportPrinterReport."Printer Name"); //SalesInvoiceHeader."No of Boxes"
+                    if MOBReport."Auto Print" = true then begin
+                        MOBReportPrinterReport.Reset();
+                        MOBReportPrinterReport.SetRange("Report Display Name", MOBReport."Display Name");
+                        if MOBReportPrinterReport.FindFirst() then begin
+                            if MOBReport."Report ID" = 60044 then
+                                Report60044.Print(StrSubstNo(Rep60034, 0, SalesInvoiceHeader."No."), MOBReportPrinterReport."Printer Name"); //SalesInvoiceHeader."No of Boxes"
+                        end;
                     end;
                 until MOBReport.Next() = 0;
         end;
