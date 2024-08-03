@@ -95,7 +95,7 @@ codeunit 50306 "WMS ReqPage Handler"
             if L_GetNoofCopy = 1 then
                 L_SetNoofCopy := 0
             else
-                L_SetNoofCopy := L_GetNoofCopy;
+                L_SetNoofCopy := L_GetNoofCopy - 1;
             _OptionsFieldValues.SetValue('NoOfCopies', L_SetNoofCopy);
         end;
         _IsHandled := true;
@@ -144,7 +144,7 @@ codeunit 50306 "WMS ReqPage Handler"
             if L_GetNoofCopy = 1 then
                 L_SetNoofCopy := 0
             else
-                L_SetNoofCopy := L_GetNoofCopy;
+                L_SetNoofCopy := L_GetNoofCopy - 1;
             _OptionsFieldValues.SetValue('NoOfCopies', L_SetNoofCopy);
         end;
 
@@ -232,7 +232,7 @@ codeunit 50306 "WMS ReqPage Handler"
                                 if SalesHeader."No of Boxes" = 1 then
                                     L_SetNoofCopy := 0
                                 else
-                                    L_SetNoofCopy := SalesHeader."No of Boxes";
+                                    L_SetNoofCopy := SalesHeader."No of Boxes" - 1;
                                 Report60039.Print(StrSubstNo(Rep60039, L_SetNoofCopy, SalesHeader."No."), MOBReportPrinterReport."Printer Name");
                             end;
                         end;
