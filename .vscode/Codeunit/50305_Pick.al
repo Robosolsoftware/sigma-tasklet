@@ -57,7 +57,7 @@ codeunit 50305 "Pick Module"
         _HeaderFields.Save();
 
         //_HeaderFields.Create_IntegerField(16, 'SourceNo', 'Source No');
-        _HeaderFields.Create_TextField(16, 'SourceNo', 'Source No');
+        _HeaderFields.Create_TextField(16, 'SourceNo', 'Inv. Pick No.');
         _HeaderFields.Set_optional(true);
         _HeaderFields.Save();
     end;
@@ -81,13 +81,14 @@ codeunit 50305 "Pick Module"
             'SourceNo':
                 begin
                     if _HeaderFilter.Value <> '' then begin
-                        L_warehouseLine.Reset();
-                        L_warehouseLine.SetRange("Source No.", _HeaderFilter.Value);
-                        L_warehouseLine.SetFilter("Activity Type", '%1|%2', L_warehouseLine."Activity Type"::Pick, L_warehouseLine."Activity Type"::"Invt. Pick");
-                        if L_warehouseLine.FindFirst() then begin
-                            _WhseActHeader.SetRange("No.", L_warehouseLine."No.");
-                        end else
-                            Error('Order does not exist');
+                        _WhseActHeader.SetRange("No.", _HeaderFilter.Value);
+                        // L_warehouseLine.Reset();
+                        // L_warehouseLine.SetRange("Source No.", _HeaderFilter.Value);
+                        // L_warehouseLine.SetFilter("Activity Type", '%1|%2', L_warehouseLine."Activity Type"::Pick, L_warehouseLine."Activity Type"::"Invt. Pick");
+                        // if L_warehouseLine.FindFirst() then begin
+                        //     _WhseActHeader.SetRange("No.", L_warehouseLine."No.");
+                        // end else
+                        //     Error('Order does not exist');
                     end;
                 end;
 
