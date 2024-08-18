@@ -24,6 +24,7 @@ codeunit 50305 "Pick Module"
     local procedure OnGetPickOrderLines_OnAfterSetFromWarehouseActivityLine(_WhseActLineTake: Record "Warehouse Activity Line"; var _BaseOrderLineElement: Record "MOB NS BaseDataModel Element")
     var
         mobtool: Codeunit "MOB Toolbox";
+        MobToolbox: Codeunit "MOB Toolbox";
     begin
         case _WhseActLineTake."Activity Type" of
             _WhseActLineTake."Activity Type"::Pick:
@@ -36,7 +37,7 @@ codeunit 50305 "Pick Module"
             _WhseActLineTake."Activity Type"::"Invt. Pick":
                 begin
                     //Add "Variant Code"++
-                    _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Variant Code : %1', _WhseActLineTake."Variant Code"));
+                    _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Variant Code : %1', _WhseActLineTake."Variant Code") + MobToolbox.CRLFSeparator() + 'Unable to Pick: ' + _WhseActLineTake."Unable to Pick");
 
                     _BaseOrderLineElement.Modify();
                 end;
@@ -52,7 +53,7 @@ codeunit 50305 "Pick Module"
         tes: Record "Warehouse Activity Header";
     begin
         _HeaderFields.InitConfigurationKey('PickOrderFilters');
-        _HeaderFields.Create_ListFieldFromListValues(15, 'TypeFilter', 'Source Type', 'Sales Order;ALL', 'Sales Order');
+        _HeaderFields.Create_ListFieldFromListValues(15, 'TypeFilter', 'Source Type', 'Sales Order;Transfer Order;ALL', 'Sales Order');
         _HeaderFields.Set_optional(true);
         _HeaderFields.Save();
 
@@ -75,6 +76,9 @@ codeunit 50305 "Pick Module"
                     if _HeaderFilter."Value" <> 'All' then begin
                         if _HeaderFilter.Value = 'Sales Order' then
                             _WhseActHeader.SetRange(_SourceDocument, _WhseActHeader._SourceDocument::"Sales Order");
+
+                        if _HeaderFilter.Value = 'Transfer Order' then
+                            _WhseActHeader.SetRange(_SourceDocument, _WhseActHeader._SourceDocument::"Outbound Transfer");
                     end;
 
                 end;
@@ -82,6 +86,7 @@ codeunit 50305 "Pick Module"
                 begin
                     if _HeaderFilter.Value <> '' then begin
                         _WhseActHeader.SetRange("No.", _HeaderFilter.Value);
+
                         // L_warehouseLine.Reset();
                         // L_warehouseLine.SetRange("Source No.", _HeaderFilter.Value);
                         // L_warehouseLine.SetFilter("Activity Type", '%1|%2', L_warehouseLine."Activity Type"::Pick, L_warehouseLine."Activity Type"::"Invt. Pick");
