@@ -50,7 +50,7 @@ codeunit 50309 "Unable to Pick"
 
     local procedure GetListValue(): Text[100]
     begin
-        exit('TOS' + ';' + 'Out Of Stock' + ';' + '');
+        exit('TOS' + ';' + 'Damaged' + ';' + '');
     end;
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Adhoc Registr.", 'OnPostAdhocRegistrationOnCustomRegistrationType', '', true, true)]
@@ -110,21 +110,23 @@ codeunit 50309 "Unable to Pick"
         L_WarehouseActivityLine: Record "Warehouse Activity Line";
         L_MobRegistration: Record "MOB WMS Registration";
     begin
-        L_WarehouseActivityLine.Reset();
-        L_WarehouseActivityLine.SetRange("No.", _WhseActivityHeader."No.");
-        L_WarehouseActivityLine.SetRange("Activity Type", _WhseActivityHeader.Type);
-        L_WarehouseActivityLine.SetRange("Action Type", L_WarehouseActivityLine."Action Type"::Take);
-        L_WarehouseActivityLine.SetRange("Unable to Pick", '');
-        if L_WarehouseActivityLine.FindSet() then begin
-            repeat
-                L_MobRegistration.Reset();
-                L_MobRegistration.SetRange(Type, L_MobRegistration.Type::Pick);
-                L_MobRegistration.SetRange("Order No.", L_WarehouseActivityLine."No.");
-                L_MobRegistration.SetRange("Source MOBSystemId", L_WarehouseActivityLine.MOBSystemID);
-                L_MobRegistration.SetRange(Handled, false);
-                if not L_MobRegistration.FindFirst() then
-                    Error('You cannot post because one of the line registrations is still pending. Order No.: %1. Line No.: %2. Item No.: %3', L_WarehouseActivityLine."No.", L_WarehouseActivityLine."Line No.", L_WarehouseActivityLine."Item No.");
-            until L_WarehouseActivityLine.Next() = 0;
+        if (_WhseActivityHeader."Source Document" <> _WhseActivityHeader."Source Document"::"Outbound Transfer") then begin
+            L_WarehouseActivityLine.Reset();
+            L_WarehouseActivityLine.SetRange("No.", _WhseActivityHeader."No.");
+            L_WarehouseActivityLine.SetRange("Activity Type", _WhseActivityHeader.Type);
+            L_WarehouseActivityLine.SetRange("Action Type", L_WarehouseActivityLine."Action Type"::Take);
+            L_WarehouseActivityLine.SetRange("Unable to Pick", '');
+            if L_WarehouseActivityLine.FindSet() then begin
+                repeat
+                    L_MobRegistration.Reset();
+                    L_MobRegistration.SetRange(Type, L_MobRegistration.Type::Pick);
+                    L_MobRegistration.SetRange("Order No.", L_WarehouseActivityLine."No.");
+                    L_MobRegistration.SetRange("Source MOBSystemId", L_WarehouseActivityLine.MOBSystemID);
+                    L_MobRegistration.SetRange(Handled, false);
+                    if not L_MobRegistration.FindFirst() then
+                        Error('You cannot post because one of the line registrations is still pending. Order No.: %1. Line No.: %2. Item No.: %3', L_WarehouseActivityLine."No.", L_WarehouseActivityLine."Line No.", L_WarehouseActivityLine."Item No.");
+                until L_WarehouseActivityLine.Next() = 0;
+            end;
         end;
     end;
 
@@ -141,8 +143,10 @@ codeunit 50309 "Unable to Pick"
             L_WarehouseActivityHeader.Reset();
             L_WarehouseActivityHeader.SetRange("No.", L_WarehouseActivityLine."No.");
             L_WarehouseActivityHeader.SetRange(Type, L_WarehouseActivityLine."Activity Type");
-            if L_WarehouseActivityHeader.FindFirst() then
-                L_WarehouseActivityHeader.Delete(true);
+            if L_WarehouseActivityHeader.FindFirst() then begin
+                if (L_WarehouseActivityHeader."Source Document" <> L_WarehouseActivityHeader."Source Document"::"Outbound Transfer") then
+                    L_WarehouseActivityHeader.Delete(true);
+            end;
         end;
     end;
 
