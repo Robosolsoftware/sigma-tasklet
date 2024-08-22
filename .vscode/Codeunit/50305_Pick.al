@@ -12,11 +12,28 @@ codeunit 50305 "Pick Module"
     local procedure OnGetPickOrders_OnAfterSetFromWarehouseActivityHeader(_WhseActHeader: Record "Warehouse Activity Header"; var _BaseOrderElement: Record "MOB Ns BaseDataModel Element")
     var
         mobtool: Codeunit "MOB Toolbox";
+        L_ShippingAgentService: Record "Shipping Agent Services";
     begin
+        _WhseActHeader.CalcFields("Shipping Agent Code", "Shipping Agent Service Code");
+
         if _BaseOrderElement.Get_DisplayLine5() <> '' then
             _BaseOrderElement.Set_DisplayLine5(_BaseOrderElement.Get_DisplayLine5() + mobtool.CRLFSeparator() + 'Work Description: ' + _WhseActHeader."Work Description")
         else
             _BaseOrderElement.Set_DisplayLine5('Work Description: ' + _WhseActHeader."Work Description");
+
+
+        if _BaseOrderElement.Get_DisplayLine3() <> '' then
+            _BaseOrderElement.Set_DisplayLine3(_BaseOrderElement.Get_DisplayLine3() + mobtool.CRLFSeparator() + 'Service Code: ' + _WhseActHeader."Shipping Agent Service Code")
+        else
+            _BaseOrderElement.Set_DisplayLine3('Service Code: ' + _WhseActHeader."Shipping Agent Service Code");
+
+
+        L_ShippingAgentService.Reset();
+        L_ShippingAgentService.SetRange("Shipping Agent Code", _WhseActHeader."Shipping Agent Code");
+        L_ShippingAgentService.SetRange(Code, _WhseActHeader."Shipping Agent Service Code");
+        if L_ShippingAgentService.FindFirst() then begin
+            _BaseOrderElement.Set_DisplayLine3(_BaseOrderElement.Get_DisplayLine3() + mobtool.CRLFSeparator() + 'Departure Time: ' + Format(L_ShippingAgentService."Departure Time"))
+        end;
 
     end;
 
@@ -53,12 +70,16 @@ codeunit 50305 "Pick Module"
         tes: Record "Warehouse Activity Header";
     begin
         _HeaderFields.InitConfigurationKey('PickOrderFilters');
-        _HeaderFields.Create_ListFieldFromListValues(15, 'TypeFilter', 'Source Type', 'Sales Order;Transfer Order;ALL', 'Sales Order');
+        _HeaderFields.Create_ListFieldFromListValues(15, 'TypeFilter', 'Source Type', 'Sales Order;Transfer Order;Purchase Return Order;ALL', 'Sales Order');
         _HeaderFields.Set_optional(true);
         _HeaderFields.Save();
 
         //_HeaderFields.Create_IntegerField(16, 'SourceNo', 'Source No');
         _HeaderFields.Create_TextField(16, 'SourceNo', 'Inv. Pick No.');
+        _HeaderFields.Set_optional(true);
+        _HeaderFields.Save();
+
+        _HeaderFields.Create_TextField(17, 'AgentServiceCode', 'Service Code');
         _HeaderFields.Set_optional(true);
         _HeaderFields.Save();
     end;
@@ -79,6 +100,10 @@ codeunit 50305 "Pick Module"
 
                         if _HeaderFilter.Value = 'Transfer Order' then
                             _WhseActHeader.SetRange(_SourceDocument, _WhseActHeader._SourceDocument::"Outbound Transfer");
+
+                        if _HeaderFilter.Value = 'Purchase Return Order' then
+                            _WhseActHeader.SetRange(_SourceDocument, _WhseActHeader._SourceDocument::"Purchase Return Order");
+
                     end;
 
                 end;
@@ -96,7 +121,12 @@ codeunit 50305 "Pick Module"
                         //     Error('Order does not exist');
                     end;
                 end;
-
+            'AgentServiceCode':
+                begin
+                    if _HeaderFilter.Value <> '' then begin
+                        _WhseActHeader.SetRange("Shipping Agent Service Code", _HeaderFilter.Value);
+                    end;
+                end;
         end;
     end;
 }
