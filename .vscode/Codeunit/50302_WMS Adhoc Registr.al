@@ -242,44 +242,44 @@ codeunit 50302 "WMS Adhoc Registr"
     end;
 
 
-    local procedure GetMediaIdAsBase64String(_MediaId: Text; var _Base64String: Text)
-    var
-        TenantMediaSet: Record "Tenant Media Set";
-        TenantMedia: Record "Tenant Media";
-        MobCommonMgt: Codeunit "MOB Common Mgt.";
-        ImageStream: InStream;
-        MediaGuid: Guid;
-    begin
-        TenantMediaSet.SetRange("Company Name", CompanyName());
-        TenantMediaSet.SetRange(ID, _MediaId);
-        if not TenantMediaSet.FindFirst() then
-            exit;
+    // local procedure GetMediaIdAsBase64String(_MediaId: Text; var _Base64String: Text)
+    // var
+    //     TenantMediaSet: Record "Tenant Media Set";
+    //     TenantMedia: Record "Tenant Media";
+    //     MobCommonMgt: Codeunit "MOB Common Mgt.";
+    //     ImageStream: InStream;
+    //     MediaGuid: Guid;
+    // begin
+    //     TenantMediaSet.SetRange("Company Name", CompanyName());
+    //     TenantMediaSet.SetRange(ID, _MediaId);
+    //     if not TenantMediaSet.FindFirst() then
+    //         exit;
 
-        // Select the Image
-        MediaGuid := SelectStr(1, Format(TenantMediaSet."Media ID"));
+    //     // Select the Image
+    //     MediaGuid := SelectStr(1, Format(TenantMediaSet."Media ID"));
 
-        // Get media
-        TenantMedia.SetRange("Company Name", CompanyName());
-        TenantMedia.SetRange(ID, MediaGuid);
-        TenantMedia.SetAutoCalcFields(Content);
-        if not TenantMedia.FindFirst() then
-            exit;
+    //     // Get media
+    //     TenantMedia.SetRange("Company Name", CompanyName());
+    //     TenantMedia.SetRange(ID, MediaGuid);
+    //     TenantMedia.SetAutoCalcFields(Content);
+    //     if not TenantMedia.FindFirst() then
+    //         exit;
 
-        // Convert to Stream
-        TenantMedia.Content.CreateInStream(ImageStream);
+    //     // Convert to Stream
+    //     TenantMedia.Content.CreateInStream(ImageStream);
 
-        // Convert to Base64
-        MobCommonMgt.ConvertStreamToBase64String(ImageStream, _Base64String);
-    end;
+    //     // Convert to Base64
+    //     MobCommonMgt.ConvertStreamToBase64String(ImageStream, _Base64String);
+    // end;
 
-    local procedure StreamBase64DataToMobWmsMediaQueue(var _MobWmsMediaQueue: Record "MOB WMS Media Queue"; _Base64Data: Text)
-    var
-        MobCommonMgt: Codeunit "MOB Common Mgt.";
-        ImageInStream: InStream;
-    begin
-        MobCommonMgt.CreateInStreamFromBase64(ImageInStream, _Base64Data);
-        _MobWmsMediaQueue.Picture.ImportStream(ImageInStream, _MobWmsMediaQueue.Note);
-    end;
+    // local procedure StreamBase64DataToMobWmsMediaQueue(var _MobWmsMediaQueue: Record "MOB WMS Media Queue"; _Base64Data: Text)
+    // var
+    //     MobCommonMgt: Codeunit "MOB Common Mgt.";
+    //     ImageInStream: InStream;
+    // begin
+    //     MobCommonMgt.CreateInStreamFromBase64(ImageInStream, _Base64Data);
+    //     _MobWmsMediaQueue.Picture.ImportStream(ImageInStream, _MobWmsMediaQueue.Note);
+    // end;
 
 
 }

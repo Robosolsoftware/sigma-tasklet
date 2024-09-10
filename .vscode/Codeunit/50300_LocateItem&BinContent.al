@@ -81,6 +81,7 @@ codeunit 50300 LocateItemANDBinContent
         ExpiryDate: Date;
         Check_Location: Code[20];
         MobSessionData: Codeunit "MOB SessionData";
+        MobTrackingSetup: Record "MOB Tracking Setup";
 
         ScannedBin: Text;
         BinCode: Code[20];
@@ -123,7 +124,10 @@ codeunit 50300 LocateItemANDBinContent
                             Item.Reset();
                             Item.Get(BinContent."Item No.");
 
-                            MobWmsToolbox.WsheTrackingEnabledExpDate(BinContent."Item No.", RegisterSerialNo, RegisterLotNo, RegisterExpirationDate);
+                            /// Determine if Warehouse Tracking enabled for the _TrackingType. Only Serial and Lot is supported, all other tracking types must be handled using other means (including MobTrackingSetup and events).
+                            //MobWmsToolbox.WsheTrackingEnabledExpDate(BinContent."Item No.", RegisterSerialNo, RegisterLotNo, RegisterExpirationDate);
+
+                            WsheTrackingEnabledExpDate(BinContent."Item No.", RegisterSerialNo, RegisterLotNo, RegisterExpirationDate);
 
                             if RegisterSerialNo or RegisterLotNo then begin
 
@@ -385,7 +389,11 @@ _ExpirationDate: Date; var
         BinContent.SetFilter(Quantity, '<>0');
         if BinContent.FindSet() then
             repeat
-                MobWmsToolbox.WsheTrackingEnabledExpDate(BinContent."Item No.", SNRequired, LotRequired, ExpDateRequired);
+                /// Determine if Warehouse Tracking enabled for the _TrackingType. Only Serial and Lot is supported, all other tracking types must be handled using other means (including MobTrackingSetup and events).
+                //MobWmsToolbox.WsheTrackingEnabledExpDate(BinContent."Item No.", SNRequired, LotRequired, ExpDateRequired);
+
+
+                WsheTrackingEnabledExpDate(BinContent."Item No.", SNRequired, LotRequired, ExpDateRequired);
 
                 EntrySummaryFound := false;
                 TrackingRequired := SNRequired or LotRequired;
@@ -575,6 +583,24 @@ _ExpirationDate: Date; var
 
         until RemainingText = '';
         exit(InputLine);
+    end;
+
+
+    procedure WsheTrackingEnabledExpDate(_ItemNo: Code[20]; var _RegisterSerialNumber: Boolean; var _RegisterLotNumber: Boolean; var _RegisterExpirationDate: Boolean)
+    var
+        Item: Record Item;
+        ItemTrackingCode: Record "Item Tracking Code";
+    begin
+        Clear(_RegisterSerialNumber);
+        Clear(_RegisterLotNumber);
+        Clear(_RegisterExpirationDate);
+        if Item.Get(_ItemNo) then
+            if ItemTrackingCode.Get(Item."Item Tracking Code") then begin
+                _RegisterSerialNumber := ItemTrackingCode."SN Warehouse Tracking";
+                _RegisterLotNumber := ItemTrackingCode."Lot Warehouse Tracking";
+                if (ItemTrackingCode."Lot Specific Tracking" or ItemTrackingCode."SN Specific Tracking") then
+                    _RegisterExpirationDate := (ItemTrackingCode."Man. Expir. Date Entry Reqd." or ItemTrackingCode."Strict Expiration Posting");
+            end;
     end;
 
 
