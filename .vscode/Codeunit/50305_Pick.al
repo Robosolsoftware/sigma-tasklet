@@ -28,12 +28,13 @@ codeunit 50305 "Pick Module"
             _BaseOrderElement.Set_DisplayLine3('Service Code: ' + _WhseActHeader."Shipping Agent Service Code");
 
 
-        L_ShippingAgentService.Reset();
+        /*L_ShippingAgentService.Reset();
         L_ShippingAgentService.SetRange("Shipping Agent Code", _WhseActHeader."Shipping Agent Code");
         L_ShippingAgentService.SetRange(Code, _WhseActHeader."Shipping Agent Service Code");
         if L_ShippingAgentService.FindFirst() then begin
             _BaseOrderElement.Set_DisplayLine3(_BaseOrderElement.Get_DisplayLine3() + mobtool.CRLFSeparator() + 'Departure Time: ' + Format(L_ShippingAgentService."Departure Time"))
-        end;
+        end;*/
+        _BaseOrderElement.Set_DisplayLine3(_BaseOrderElement.Get_DisplayLine3() + mobtool.CRLFSeparator() + 'Departure Time: ' + Format(_WhseActHeader."Departure Time"))
 
     end;
 
@@ -79,9 +80,22 @@ codeunit 50305 "Pick Module"
         _HeaderFields.Set_optional(true);
         _HeaderFields.Save();
 
-        _HeaderFields.Create_TextField(17, 'AgentServiceCode', 'Service Code');
+        _HeaderFields.Create_DateField(17, 'ShipmentDate', 'Shipment Date');
         _HeaderFields.Set_optional(true);
         _HeaderFields.Save();
+
+
+        _HeaderFields.Create_ListFieldFromDataTable(30000, 'ShippingAgentCode', 'Shipping Agent Code', 'ShippingAgent', 'Code', 'Code', '');
+        _HeaderFields.Set_optional(true);
+
+
+    end;
+
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Pick", 'OnGetPickOrders_OnAfterSetFromWarehouseActivityHeader', '', true, true)]
+    local procedure My02GetPickOrders_OnAfterSetFromWarehouseActivityHeader(_WhseActHeader: Record "Warehouse Activity Header"; var _BaseOrderElement: Record "MOB Ns BaseDataModel Element")
+    begin
+        _BaseOrderElement.SetValue('DepartureTime', 'Departure Time: ' + Format(_WhseActHeader."Departure Time"));
+        _BaseOrderElement.Set_Sorting1(_BaseOrderElement.GetValue('DepartureTime'));
     end;
 
 
@@ -121,12 +135,39 @@ codeunit 50305 "Pick Module"
                         //     Error('Order does not exist');
                     end;
                 end;
-            'AgentServiceCode':
+            'ShippingAgentCode':
                 begin
                     if _HeaderFilter.Value <> '' then begin
-                        _WhseActHeader.SetRange("Shipping Agent Service Code", _HeaderFilter.Value);
+                        _WhseActHeader.SetRange("Shipping Agent Code", _HeaderFilter.Value);
+                    end;
+                end;
+            'ShipmentDate':
+                begin
+                    if _HeaderFilter.Get_Date <> 0D then begin
+                        _WhseActHeader.SetRange("Shipment Date", _HeaderFilter.Get_Date());
                     end;
                 end;
         end;
+    end;
+
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Reference Data", 'OnGetReferenceData_OnAddDataTables', '', true, true)]
+    procedure My02OnGetReferenceData_OnAddDataTables(var _DataTable: Record "MOB DataTable Element")
+    var
+        ShippingAgent: Record "Shipping Agent";
+        ShippingAgentService: Record "Shipping Agent Services";
+    begin
+        _DataTable.InitDataTable('ShippingAgent');
+        _DataTable.Create();
+        _DataTable.SetValue('Code', '');
+        _DataTable.SetValue('Name', ' ');
+        ShippingAgent.Reset();
+        if ShippingAgent.FindFirst() then begin
+            repeat
+                _DataTable.Create();
+                _DataTable.SetValue('Code', ShippingAgent.Code);
+                _DataTable.SetValue('Name', ShippingAgent.Name);
+            until ShippingAgent.Next() = 0;
+        end;
+
     end;
 }

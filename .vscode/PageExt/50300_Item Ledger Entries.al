@@ -14,11 +14,6 @@ pageextension 50300 "TC Item Ledger Entries" extends "Item Ledger Entries"
         }
     }
 
-    actions
-    {
-        // Add changes to page actions here
-    }
-
     var
         myInt: Integer;
 }
