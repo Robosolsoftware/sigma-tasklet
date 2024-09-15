@@ -80,7 +80,7 @@ codeunit 50305 "Pick Module"
         _HeaderFields.Set_optional(true);
         _HeaderFields.Save();
 
-        _HeaderFields.Create_DateField(17, 'ShipmentDate', 'Shipment Date');
+        _HeaderFields.Create_TextField(17, 'ShipmentDate', 'Shipment Date');
         _HeaderFields.Set_optional(true);
         _HeaderFields.Save();
 
@@ -143,8 +143,8 @@ codeunit 50305 "Pick Module"
                 end;
             'ShipmentDate':
                 begin
-                    if _HeaderFilter.Get_Date <> 0D then begin
-                        _WhseActHeader.SetRange("Shipment Date", _HeaderFilter.Get_Date());
+                    if _HeaderFilter.Value <> '' then begin
+                        _WhseActHeader.SetFilter("Shipment Date", _HeaderFilter.Value);
                     end;
                 end;
         end;
@@ -168,6 +168,5 @@ codeunit 50305 "Pick Module"
                 _DataTable.SetValue('Name', ShippingAgent.Name);
             until ShippingAgent.Next() = 0;
         end;
-
     end;
 }
