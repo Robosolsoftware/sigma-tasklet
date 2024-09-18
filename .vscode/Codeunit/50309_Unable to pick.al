@@ -59,6 +59,7 @@ codeunit 50309 "Unable to Pick"
     var
         L_WarehouseActivityLine: Record "Warehouse Activity Line";
         L_LineNo: Integer;
+        L_SalesLine: Record "Sales Line";
     begin
         // Handle only this type
         if _RegistrationType <> 'UnableToPick' then
@@ -77,6 +78,16 @@ codeunit 50309 "Unable to Pick"
         if L_WarehouseActivityLine.FindFirst() then begin
             L_WarehouseActivityLine."Unable to Pick" := _RequestValues.GetValueOrContextValue('UnableToPickQuantity');
             L_WarehouseActivityLine.Modify();
+
+
+            L_SalesLine.Reset();
+            L_SalesLine.SetRange("Document No.", L_WarehouseActivityLine."Source No.");
+            L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+            L_SalesLine.SetRange("Line No.", L_WarehouseActivityLine."Source Line No.");
+            if L_SalesLine.FindFirst() then begin
+                L_SalesLine."Unable to Pick" := L_WarehouseActivityLine."Unable to Pick";
+                L_SalesLine.Modify();
+            end;
             _SuccessMessage := 'Completed..'
         end;
 
