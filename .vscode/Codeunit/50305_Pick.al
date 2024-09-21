@@ -155,6 +155,7 @@ codeunit 50305 "Pick Module"
     var
         ShippingAgent: Record "Shipping Agent";
         ShippingAgentService: Record "Shipping Agent Services";
+        test: Record "MOB WMS Registration";
     begin
         _DataTable.InitDataTable('ShippingAgent');
         _DataTable.Create();

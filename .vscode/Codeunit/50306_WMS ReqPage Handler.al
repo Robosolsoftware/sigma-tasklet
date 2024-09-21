@@ -2,54 +2,56 @@ codeunit 50306 "WMS ReqPage Handler"
 {
     Permissions = tabledata 110 = m;
     //We dont required to print KNAAP Invoice from Scanner+++
-    // [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB Report Print Lookup", 'OnLookupOnPrintReport_OnAddStepsForReport', '', true, true)]
-    // local procedure OnLookupOnPrintReport_OnAddStepsForReport(_MobReport: Record "MOB Report"; var _RequestValues: Record "MOB NS Request Element"; _SourceRecRef: RecordRef; var _Steps: Record "MOB Steps Element"; var _IsHandled: Boolean)
-    // var
-    //     MobReportPrintSteps: Codeunit "MOB Report Print Lookup";
-    //     ItemNo: Text;
-    // begin
-    //     if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"Sales Invoice (Order)" then
-    //         exit;
-    //     _Steps.Create_TextStep(10, 'SalesOrderNo');
-    //     _Steps.Set_header('Sales Order No');
-    //     _Steps.Set_label('Sales Order No:');
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB Report Print Lookup", 'OnLookupOnPrintReport_OnAddStepsForReport', '', true, true)]
+    local procedure OnLookupOnPrintReport_OnAddStepsForReport(_MobReport: Record "MOB Report"; var _RequestValues: Record "MOB NS Request Element"; _SourceRecRef: RecordRef; var _Steps: Record "MOB Steps Element"; var _IsHandled: Boolean)
+    var
+        MobReportPrintSteps: Codeunit "MOB Report Print Lookup";
+        ItemNo: Text;
+    begin
+        if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"Sales Invoice (Order)" then
+            exit;
+        _Steps.Create_TextStep(10, 'SalesOrderNo');
+        _Steps.Set_header('Sales Order No');
+        _Steps.Set_label('Sales Order No:');
 
-    //     _Steps.Create_TextStep(20, 'NoOfCopies');
-    //     _Steps.Set_header('No Of Copies');
-    //     _Steps.Set_label('No Of Copies:');
+        _Steps.Create_TextStep(20, 'NoOfCopies');
+        _Steps.Set_header('No Of Copies');
+        _Steps.Set_label('No Of Copies:');
+        _Steps.Set_defaultValue(1);
+        _Steps.Set_minValue(1);
 
-    //     MobReportPrintSteps.CreateReportPrinterAndNoOfCopiesSteps(_MobReport, _RequestValues, _Steps, 90, 0);
-    //     _IsHandled := true;
-    // end;
+        MobReportPrintSteps.CreateReportPrinterAndNoOfCopiesSteps(_MobReport, _RequestValues, _Steps, 90, 0);
+        _IsHandled := true;
+    end;
 
-    // [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB ReportParameters Mgt.", 'OnCreateReportParameters', '', true, true)]
-    // local procedure OnCreateReportParameters(_MobReport: Record "Mob Report"; _SourceRecRef: RecordRef; var _RequestValues: Record "MOB NS Request Element" temporary; var _OptionsFieldValues: Record "MOB ReportParameters Element"; var _DataItemViews: Record "MOB ReportParameters Element"; var _IsHandled: Boolean)
-    // var
-    //     SalesHeader: Record "Sales Header";
-    //     Item: Record Item;
-    //     L_GetNoofCopy: Integer;
-    //     L_SetNoofCopy: Integer;
-    // begin
-    //     Clear(L_GetNoofCopy);
-    //     Clear(L_SetNoofCopy);
-    //     if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"Sales Invoice (Order)" then
-    //         exit;
-    //     SalesHeader.Reset();
-    //     SalesHeader.SetRange("Document Type", SalesHeader."Document Type"::Order);
-    //     SalesHeader.SetRange("No.", _RequestValues.GetValue('SalesOrderNo'));
-    //     if SalesHeader.FindFirst() then begin
-    //         _DataItemViews.SetValue('Sales Header', SalesHeader.GetView(false));
-    //         Evaluate(L_GetNoofCopy, _RequestValues.GetValue('NoOfCopies'));
-    //         if L_GetNoofCopy = 1 then
-    //             L_SetNoofCopy := 0
-    //         else
-    //             L_SetNoofCopy := L_GetNoofCopy;
-    //         _OptionsFieldValues.SetValue('NoOfCopies', L_SetNoofCopy);
-    //     end;
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB ReportParameters Mgt.", 'OnCreateReportParameters', '', true, true)]
+    local procedure OnCreateReportParameters(_MobReport: Record "Mob Report"; _SourceRecRef: RecordRef; var _RequestValues: Record "MOB NS Request Element" temporary; var _OptionsFieldValues: Record "MOB ReportParameters Element"; var _DataItemViews: Record "MOB ReportParameters Element"; var _IsHandled: Boolean)
+    var
+        SalesHeader: Record "Sales Header";
+        Item: Record Item;
+        L_GetNoofCopy: Integer;
+        L_SetNoofCopy: Integer;
+    begin
+        Clear(L_GetNoofCopy);
+        Clear(L_SetNoofCopy);
+        if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"Sales Invoice (Order)" then
+            exit;
+        SalesHeader.Reset();
+        SalesHeader.SetRange("Document Type", SalesHeader."Document Type"::Order);
+        SalesHeader.SetRange("No.", _RequestValues.GetValue('SalesOrderNo'));
+        if SalesHeader.FindFirst() then begin
+            _DataItemViews.SetValue('Sales Header', SalesHeader.GetView(false));
+            Evaluate(L_GetNoofCopy, _RequestValues.GetValue('NoOfCopies'));
+            if L_GetNoofCopy = 1 then
+                L_SetNoofCopy := 0
+            else
+                L_SetNoofCopy := L_GetNoofCopy;
+            _OptionsFieldValues.SetValue('NoOfCopies', L_SetNoofCopy);
+        end;
 
 
-    //     _IsHandled := true;
-    // end;
+        _IsHandled := true;
+    end;
     //We dont required to print KNAAP Invoice from Scanner+++
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB Report Print Lookup", 'OnLookupOnPrintReport_OnAddStepsForReport', '', true, true)]
@@ -148,7 +150,8 @@ codeunit 50306 "WMS ReqPage Handler"
             L_SalesShipmentHeader.SetRange("Inv. Pick No.", _RequestValues.GetValue('InvPickNo'));
             if L_SalesShipmentHeader.FindFirst() then begin
                 Clear(L_GetNoofCopy);
-                Evaluate(L_GetNoofCopy, _RequestValues.GetValue('NoOfCopies'));
+                //Evaluate(L_GetNoofCopy, _RequestValues.GetValue('NoOfCopies'));
+                L_GetNoofCopy := _RequestValues.GetValueAsInteger('NoOfCopies');
                 L_SalesShipmentHeader."No of Boxes" := L_GetNoofCopy;
                 L_SalesShipmentHeader.Modify();
             end;
