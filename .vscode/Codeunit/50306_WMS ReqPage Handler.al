@@ -10,9 +10,9 @@ codeunit 50306 "WMS ReqPage Handler"
     begin
         if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"Sales Invoice (Order)" then
             exit;
-        _Steps.Create_TextStep(10, 'SalesOrderNo');
-        _Steps.Set_header('Sales Order No');
-        _Steps.Set_label('Sales Order No:');
+        _Steps.Create_TextStep(10, 'ToteNo');
+        _Steps.Set_header('Tote No');
+        _Steps.Set_label('Tote No:');
 
         _Steps.Create_TextStep(20, 'NoOfCopies');
         _Steps.Set_header('No Of Copies');
@@ -31,23 +31,32 @@ codeunit 50306 "WMS ReqPage Handler"
         Item: Record Item;
         L_GetNoofCopy: Integer;
         L_SetNoofCopy: Integer;
+        L_SalesLine: Record "Sales Line";
     begin
         Clear(L_GetNoofCopy);
         Clear(L_SetNoofCopy);
         if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"Sales Invoice (Order)" then
             exit;
-        SalesHeader.Reset();
-        SalesHeader.SetRange("Document Type", SalesHeader."Document Type"::Order);
-        SalesHeader.SetRange("No.", _RequestValues.GetValue('SalesOrderNo'));
-        if SalesHeader.FindFirst() then begin
-            _DataItemViews.SetValue('Sales Header', SalesHeader.GetView(false));
-            Evaluate(L_GetNoofCopy, _RequestValues.GetValue('NoOfCopies'));
-            if L_GetNoofCopy = 1 then
-                L_SetNoofCopy := 0
-            else
-                L_SetNoofCopy := L_GetNoofCopy;
-            _OptionsFieldValues.SetValue('NoOfCopies', L_SetNoofCopy);
+
+        L_SalesLine.Reset();
+        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+        L_SalesLine.SetRange("Load Unit", _RequestValues.GetValue('ToteNo'));
+        if L_SalesLine.FindFirst() then begin
+            SalesHeader.Reset();
+            SalesHeader.SetRange("Document Type", SalesHeader."Document Type"::Order);
+            SalesHeader.SetRange("No.", L_SalesLine."Document No.");
+            //SalesHeader.SetRange("No.", _RequestValues.GetValue('SalesOrderNo'));
+            if SalesHeader.FindFirst() then begin
+                _DataItemViews.SetValue('Sales Header', SalesHeader.GetView(false));
+                Evaluate(L_GetNoofCopy, _RequestValues.GetValue('NoOfCopies'));
+                if L_GetNoofCopy = 1 then
+                    L_SetNoofCopy := 0
+                else
+                    L_SetNoofCopy := L_GetNoofCopy;
+                _OptionsFieldValues.SetValue('NoOfCopies', L_SetNoofCopy);
+            end;
         end;
+
 
 
         _IsHandled := true;
