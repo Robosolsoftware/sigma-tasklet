@@ -32,6 +32,8 @@ codeunit 50306 "WMS ReqPage Handler"
         L_GetNoofCopy: Integer;
         L_SetNoofCopy: Integer;
         L_SalesLine: Record "Sales Line";
+        L_SalesShipmentLine: Record "Sales Shipment Line";
+        L_SalesShipmentHeader: Record "Sales Shipment Header";
     begin
         Clear(L_GetNoofCopy);
         Clear(L_SetNoofCopy);
@@ -41,11 +43,10 @@ codeunit 50306 "WMS ReqPage Handler"
         L_SalesLine.Reset();
         L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
         L_SalesLine.SetRange("Load Unit", _RequestValues.GetValue('ToteNo'));
-        if L_SalesLine.FindFirst() then begin
+        if L_SalesLine.FindLast() then begin
             SalesHeader.Reset();
             SalesHeader.SetRange("Document Type", SalesHeader."Document Type"::Order);
             SalesHeader.SetRange("No.", L_SalesLine."Document No.");
-            //SalesHeader.SetRange("No.", _RequestValues.GetValue('SalesOrderNo'));
             if SalesHeader.FindFirst() then begin
                 _DataItemViews.SetValue('Sales Header', SalesHeader.GetView(false));
                 Evaluate(L_GetNoofCopy, _RequestValues.GetValue('NoOfCopies'));
@@ -56,8 +57,6 @@ codeunit 50306 "WMS ReqPage Handler"
                 _OptionsFieldValues.SetValue('NoOfCopies', L_SetNoofCopy);
             end;
         end;
-
-
 
         _IsHandled := true;
     end;
