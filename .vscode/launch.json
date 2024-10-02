@@ -6,7 +6,7 @@
             "request": "launch",
             "type": "al",
             "environmentType": "Sandbox",
-            "environmentName": "Robosol_Copy250924",
+            "environmentName": "Robosol_Copy290924",
             "tenant": "55614040-8b3d-41a1-bae8-2140b06bd0c3",
             "startupObjectId": 6181398,
             "startupObjectType": "Table",
@@ -14,7 +14,7 @@
             "launchBrowser": true,
             "enableLongRunningSqlStatements": true,
             "enableSqlInformationDebugger": true,
-            "schemaUpdateMode": "ForceSync"
+            "schemaUpdateMode": "Synchronize"
         }
     ]
 }
