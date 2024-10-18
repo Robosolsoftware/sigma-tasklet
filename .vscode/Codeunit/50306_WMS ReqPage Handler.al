@@ -19,6 +19,7 @@ codeunit 50306 "WMS ReqPage Handler"
         _Steps.Set_label('No Of Copies:');
         _Steps.Set_defaultValue(1);
         _Steps.Set_minValue(1);
+        _Steps.Set_maxValue(100);
 
         MobReportPrintSteps.CreateReportPrinterAndNoOfCopiesSteps(_MobReport, _RequestValues, _Steps, 90, 0);
         _IsHandled := true;
@@ -79,6 +80,7 @@ codeunit 50306 "WMS ReqPage Handler"
         _Steps.Set_label('No Of Copies:');
         _Steps.Set_defaultValue(1);
         _Steps.Set_minValue(1);
+        _Steps.Set_maxValue(100);
 
         MobReportPrintSteps.CreateReportPrinterAndNoOfCopiesSteps(_MobReport, _RequestValues, _Steps, 90, 0);
         _IsHandled := true;
