@@ -12,6 +12,7 @@ codeunit 50301 "PutAway Module"
     local procedure OnGetPutAwayOrderLines_OnAfterSetFromWarehouseActivityLine(_WhseActLineTake: Record "Warehouse Activity Line"; var _BaseOrderLineElement: Record "MOB NS BaseDataModel Element")
     var
         MobToolbox: Codeunit "MOB Toolbox";
+        ItemVariant: Record "Item Variant";
     begin
         case _WhseActLineTake."Activity Type" of
             _WhseActLineTake."Activity Type"::"Put-away":
@@ -20,9 +21,14 @@ codeunit 50301 "PutAway Module"
                     _BaseOrderLineElement.Set_ToBin('');
 
 
-
-                    //Add "Variant Code"++
-                    _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Variant Code : %1', _WhseActLineTake."Variant Code"));
+                    ItemVariant.Reset();
+                    ItemVariant.SetRange(Code, _WhseActLineTake."Variant Code");
+                    ItemVariant.SetRange("Item No.", _WhseActLineTake."Item No.");
+                    if ItemVariant.FindFirst() then
+                        _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Variant Code : %1 Priority : %2', _WhseActLineTake."Variant Code", ItemVariant.Priority))
+                    else
+                        //Add "Variant Code"++
+                        _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Variant Code : %1', _WhseActLineTake."Variant Code"));
 
                     _BaseOrderLineElement.Modify();
                 end;
@@ -31,9 +37,14 @@ codeunit 50301 "PutAway Module"
                     //Remove Sugessted To Bin Code++
                     _BaseOrderLineElement.Set_ToBin('');
 
-
-                    //Add "Variant Code"++
-                    _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Variant Code : %1', _WhseActLineTake."Variant Code"));
+                    ItemVariant.Reset();
+                    ItemVariant.SetRange(Code, _WhseActLineTake."Variant Code");
+                    ItemVariant.SetRange("Item No.", _WhseActLineTake."Item No.");
+                    if ItemVariant.FindFirst() then
+                        //Add "Variant Code"++
+                        _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Variant Code : %1 Priority : %2', _WhseActLineTake."Variant Code", ItemVariant.Priority))
+                    else
+                        _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Variant Code : %1', _WhseActLineTake."Variant Code"));
 
                     _BaseOrderLineElement.Modify();
                 end;

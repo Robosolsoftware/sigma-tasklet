@@ -515,8 +515,8 @@ _ExpirationDate: Date; var
         _LookupResponse.Set_DisplayLine2(LineBuf[1]);
         //_LookupResponse.Set_DisplayLine3(_BinContent."Variant Code" <> '', MobWmsLanguage.GetMessage('VARIANT_LABEL') + ': ' + _BinContent."Variant Code", LineBuf[2]);
         _LookupResponse.Set_DisplayLine3(MobWmsLanguage.GetMessage('VARIANT_LABEL') + ': ' + _BinContent."Variant Code");
-        _LookupResponse.Set_DisplayLine4(MobWmsLanguage.GetMessage('UOM_LABEL') + ': ' + _BinContent."Unit of Measure Code" + MobToolbox.CRLFSeparator() + ExpText);
-        _LookupResponse.Set_DisplayLine5('');
+        _LookupResponse.Set_DisplayLine4(MobWmsLanguage.GetMessage('UOM_LABEL') + ': ' + _BinContent."Unit of Measure Code" + MobToolbox.CRLFSeparator() + ExpText + MobToolbox.CRLFSeparator() + StrSubstNo('Priority : %1', ItemVariant.Priority));
+        //_LookupResponse.Set_DisplayLine5('Priority: ' + Format(ItemVariant.Priority));
 
         _LookupResponse.Set_ExtraInfo1('');
         _LookupResponse.Set_ExtraInfo2('');
