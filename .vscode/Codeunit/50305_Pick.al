@@ -186,16 +186,18 @@ codeunit 50305 "Pick Module"
         _RecRef.SetTable(L_WarehouseActivityLine);
 
         if L_WarehouseActivityLine."Activity Type" = L_WarehouseActivityLine."Activity Type"::"Invt. Pick" then begin
-            L_Item.Reset();
-            L_Item.SetRange("No.", L_WarehouseActivityLine."Item No.");
-            if L_Item.FindFirst() then begin
-                if L_Item."Variant Mandatory if Exists" <> L_Item."Variant Mandatory if Exists"::No then begin
-                    _Steps.Create_ListStep_Variant(1, L_WarehouseActivityLine."Item No.");
-                    _Steps.Set_defaultValue(L_WarehouseActivityLine."Variant Code");
+            if L_WarehouseActivityLine."Source Document" = L_WarehouseActivityLine."Source Document"::"Sales Order" then begin
+                L_Item.Reset();
+                L_Item.SetRange("No.", L_WarehouseActivityLine."Item No.");
+                if L_Item.FindFirst() then begin
+                    if L_Item."Variant Mandatory if Exists" <> L_Item."Variant Mandatory if Exists"::No then begin
+                        _Steps.Create_ListStep_Variant(1, L_WarehouseActivityLine."Item No.");
+                        _Steps.Set_defaultValue(L_WarehouseActivityLine."Variant Code");
 
 
-                    // // Enabled Online Validation and setting a DocumentType
-                    // _Steps.Set_onlineValidation('ValidateMyVarintStep', true);
+                        // // Enabled Online Validation and setting a DocumentType
+                        // _Steps.Set_onlineValidation('ValidateMyVarintStep', true);
+                    end;
                 end;
             end;
         end;
@@ -228,64 +230,122 @@ codeunit 50305 "Pick Module"
     // //Check Free quantity Validatio------
 
 
-    //Update New Variant On Sales line++++
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Pick", 'OnPostPickOrder_OnHandleRegistrationForWarehouseActivityLine', '', true, true)]
-    local procedure OnPostPickOrder_OnHandleRegistrationForWarehouseActivityLine(var _Registration: Record "MOB WMS Registration"; var _WarehouseActivityLine: Record "Warehouse Activity Line")
-    var
-        L_SalesLine: Record "Sales Line";
+    //Update New Variant On Warehouse activity line for Check Bin Content if Bin Has been changed and other changes++++
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Pick", 'OnPostPickOrder_OnBeforeHandleRegistrationForWarehouseActivityLine', '', false, false)]
+    local procedure OnPostPickOrder_OnBeforeHandleRegistrationForWarehouseActivityLine(var _Registration: Record "MOB WMS Registration"; var _WarehouseActivityLine: Record "Warehouse Activity Line")
     begin
-        Clear(CalledFromScanner);
-
         if _WarehouseActivityLine."Activity Type" = _WarehouseActivityLine."Activity Type"::"Invt. Pick" then begin
-            L_SalesLine.Reset();
-            if _WarehouseActivityLine."Source Document" = _WarehouseActivityLine."Source Document"::"Sales Order" then
-                L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
-            L_SalesLine.SetRange("Document No.", _WarehouseActivityLine."Source No.");
-            L_SalesLine.SetRange("Line No.", _WarehouseActivityLine."Source Line No.");
-            if L_SalesLine.FindFirst() then begin
+            //Sales Order+++
+            if _WarehouseActivityLine."Source Document" = _WarehouseActivityLine."Source Document"::"Sales Order" then begin
                 if _Registration.GetValue('Variant') <> '' then begin
-                    if L_SalesLine."Variant Code" <> _Registration.GetValue('Variant') then begin
-                        CalledFromScanner := true;
-                        //Update Sales line+++
-                        L_SalesLine.Validate("Variant Code", _Registration.GetValue('Variant'));
-                        L_SalesLine.Modify();
+                    if _WarehouseActivityLine."Variant Code" <> _Registration.GetValue('Variant') then begin
+                        _WarehouseActivityLine.Validate("Variant Code", _Registration.GetValue('Variant'));
                     end;
-                    // //Update on Inv Pick Line++
-                    // if _WarehouseActivityLine."Variant Code" <> _Registration.GetValue('Variant') then begin
-                    //     CalledFromScanner := true;
-                    //     _WarehouseActivityLine.Validate("Variant Code", _Registration.GetValue('Variant'));
-                    //     _WarehouseActivityLine.Modify();
-                    // end;
                 end;
             end;
         end;
     end;
 
-    //Update New Variant On Warehouse activity line++++
+
+    //Update New Variant On Sales line++++
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Pick", 'OnPostPickOrder_OnHandleRegistrationForWarehouseActivityLine', '', true, true)]
+    local procedure OnPostPickOrder_OnHandleRegistrationForWarehouseActivityLine(var _Registration: Record "MOB WMS Registration"; var _WarehouseActivityLine: Record "Warehouse Activity Line")
+    var
+        L_SalesLine: Record "Sales Line";
+        L_TransferLine: Record "Transfer Line";
+    begin
+        Clear(CalledFromScanner);
+
+        if _WarehouseActivityLine."Activity Type" = _WarehouseActivityLine."Activity Type"::"Invt. Pick" then begin
+            //Sales Order+++
+            if _WarehouseActivityLine."Source Document" = _WarehouseActivityLine."Source Document"::"Sales Order" then begin
+                L_SalesLine.Reset();
+                L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                L_SalesLine.SetRange("Document No.", _WarehouseActivityLine."Source No.");
+                L_SalesLine.SetRange("Line No.", _WarehouseActivityLine."Source Line No.");
+                L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                if L_SalesLine.FindFirst() then begin
+                    if _Registration.GetValue('Variant') <> '' then begin
+                        if L_SalesLine."Variant Code" <> _Registration.GetValue('Variant') then begin
+                            CalledFromScanner := true;
+                            //Update Sales line+++
+                            L_SalesLine.Validate("Variant Code", _Registration.GetValue('Variant'));
+                            L_SalesLine.Modify();
+                        end;
+                        // //Update on Inv Pick Line++
+                        // if _WarehouseActivityLine."Variant Code" <> _Registration.GetValue('Variant') then begin
+                        //     CalledFromScanner := true;
+                        //     _WarehouseActivityLine.Validate("Variant Code", _Registration.GetValue('Variant'));
+                        //     _WarehouseActivityLine.Modify();
+                        // end;
+                    end;
+                end;
+            end;
+
+            // //Transfer Order+++
+            // L_TransferLine.Reset();
+            // if _WarehouseActivityLine."Source Document" = _WarehouseActivityLine."Source Document"::"Outbound Transfer" then begin
+            //     L_TransferLine.SetRange("Document No.", _WarehouseActivityLine."Source No.");
+            //     L_TransferLine.SetRange("Line No.", _WarehouseActivityLine."Source Line No.");
+            //     if L_TransferLine.FindFirst() then begin
+            //         if _Registration.GetValue('Variant') <> '' then begin
+            //             if L_TransferLine."Variant Code" <> _Registration.GetValue('Variant') then begin
+            //                 CalledFromScanner := true;
+            //                 L_TransferLine.Validate("Variant Code", _Registration.GetValue('Variant'));
+            //                 L_TransferLine.Modify();
+            //             end;
+            //         end;
+            //     end;
+            // end;
+
+        end;
+    end;
+
+
+    //Update New Variant On Warehouse activity line for posting Inv Pick++++
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Pick", 'OnPostPickOrder_OnBeforeRunWhseActivityPost', '', false, false)]
     local procedure OnPostPickOrder_OnBeforeRunWhseActivityPost(var _WhseActLinesToPost: Record "Warehouse Activity Line")
     var
         L_SalesLine: Record "Sales Line";
+        L_TransferLine: Record "Transfer Line";
     begin
         if _WhseActLinesToPost.FindSet() then begin
             repeat
-                L_SalesLine.Reset();
-                L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
-                L_SalesLine.SetRange("Document No.", _WhseActLinesToPost."Source No.");
-                L_SalesLine.SetRange("Line No.", _WhseActLinesToPost."Source Line No.");
-                if L_SalesLine.FindFirst() then begin
-                    if L_SalesLine."Variant Code" <> _WhseActLinesToPost."Variant Code" then begin
-                        _WhseActLinesToPost.Validate("Variant Code", L_SalesLine."Variant Code");
-                        _WhseActLinesToPost.Modify();
+                //Sales Order++
+                if _WhseActLinesToPost."Source Document" = _WhseActLinesToPost."Source Document"::"Sales Order" then begin
+                    L_SalesLine.Reset();
+                    L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                    L_SalesLine.SetRange("Document No.", _WhseActLinesToPost."Source No.");
+                    L_SalesLine.SetRange("Line No.", _WhseActLinesToPost."Source Line No.");
+                    L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                    if L_SalesLine.FindFirst() then begin
+                        if L_SalesLine."Variant Code" <> _WhseActLinesToPost."Variant Code" then begin
+                            _WhseActLinesToPost.Validate("Variant Code", L_SalesLine."Variant Code");
+                            _WhseActLinesToPost.Modify();
+                        end;
                     end;
                 end;
+
+            // //Transfer Order+++
+            // if _WhseActLinesToPost."Source Document" = _WhseActLinesToPost."Source Document"::"Outbound Transfer" then begin
+            //     L_TransferLine.Reset();
+            //     L_TransferLine.SetRange("Document No.", _WhseActLinesToPost."Source No.");
+            //     L_TransferLine.SetRange("Line No.", _WhseActLinesToPost."Source Line No.");
+            //     if L_TransferLine.FindFirst() then begin
+            //         if L_TransferLine."Variant Code" <> _WhseActLinesToPost."Variant Code" then begin
+            //             _WhseActLinesToPost.Validate("Variant Code", L_TransferLine."Variant Code");
+            //             _WhseActLinesToPost.Modify();
+            //         end;
+            //     end;
+            // end;
+
             until _WhseActLinesToPost.Next() = 0;
         end;
     end;
 
 
-
     //Removed Default Open Status Check+++++++
+    //Sales Order++++
     //Step1++
     [EventSubscriber(ObjectType::Table, Database::"Sales Line", 'OnBeforeTestStatusOpen', '', false, false)]
     local procedure OnBeforeTestStatusOpen(CallingFieldNo: Integer; var SalesHeader: Record "Sales Header"; var IsHandled: Boolean)
@@ -312,16 +372,32 @@ codeunit 50305 "Pick Module"
             CalledFromScanner := false;
         end;
     end;
+    //Sales Order----
+
+    // //Transfer Line+++
+    // //Step1++
+    // [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse. Validate Source Line", 'OnBeforeTransLineVerifyChange', '', false, false)]
+    // local procedure OnBeforeTransLineVerifyChange(var IsHandled: Boolean)
+    // begin
+    //     //Check to ignore Status Validation from Scanner at the time of change Variant Code+++
+    //     if CalledFromScanner = true then begin
+    //         IsHandled := true;
+    //     end;
+    //     CalledFromScanner := false;
+    // end;
+    // //Transfer Line---
+
     //Removed Default Open Status Check+++++++
 
 
-    //Revert sales Line Changes if posting failed++++
+    //Revert sales Line and Transfer Line Changes if posting failed++++
     [EventSubscriber(ObjectType::Table, Database::"MOB WMS Registration", 'OnBeforeDeleteEvent', '', false, false)]
     local procedure MOBRegistraion_OnAfterDeleteEvent(var Rec: Record "MOB WMS Registration")
     var
         L_MOBRegistration: Record "MOB WMS Registration";
         L_SalesLine: Record "Sales Line";
         L_WarehouseActivityLine: Record "Warehouse Activity Line";
+        L_TransferLine: Record "Transfer Line";
     begin
         L_MOBRegistration.Reset();
         L_MOBRegistration.SetRange("Posting MessageId", Rec."Posting MessageId");
@@ -334,19 +410,39 @@ codeunit 50305 "Pick Module"
                     L_WarehouseActivityLine.SetRange("No.", L_MOBRegistration."Order No.");
                     L_WarehouseActivityLine.SetRange("Line No.", L_MOBRegistration."Line No.");
                     if L_WarehouseActivityLine.FindFirst() then begin
-                        L_SalesLine.Reset();
-                        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
-                        L_SalesLine.SetRange("Document No.", L_WarehouseActivityLine."Source No.");
-                        L_SalesLine.SetRange("Line No.", L_WarehouseActivityLine."Source Line No.");
-                        if L_SalesLine.FindFirst() then begin
-                            if L_SalesLine."Variant Code" <> L_MOBRegistration."Variant Code" then begin
-                                CalledFromScanner := true;
+                        //Sales Order++
+                        if L_WarehouseActivityLine."Source Document" = L_WarehouseActivityLine."Source Document"::"Sales Order" then begin
+                            L_SalesLine.Reset();
+                            L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                            L_SalesLine.SetRange("Document No.", L_WarehouseActivityLine."Source No.");
+                            L_SalesLine.SetRange("Line No.", L_WarehouseActivityLine."Source Line No.");
+                            L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                            if L_SalesLine.FindFirst() then begin
+                                if L_SalesLine."Variant Code" <> L_MOBRegistration."Variant Code" then begin
+                                    CalledFromScanner := true;
 
-                                L_SalesLine.Validate("Variant Code", L_MOBRegistration."Variant Code");
-                                L_SalesLine.Modify();
-                                Commit();
+                                    L_SalesLine.Validate("Variant Code", L_MOBRegistration."Variant Code");
+                                    L_SalesLine.Modify();
+                                    Commit();
+                                end;
                             end;
                         end;
+
+                        // //Transfer Order++
+                        // if L_WarehouseActivityLine."Source Document" = L_WarehouseActivityLine."Source Document"::"Outbound Transfer" then begin
+                        //     L_TransferLine.Reset();
+                        //     L_TransferLine.SetRange("Document No.", L_WarehouseActivityLine."Source No.");
+                        //     L_TransferLine.SetRange("Line No.", L_WarehouseActivityLine."Source Line No.");
+                        //     if L_TransferLine.FindFirst() then begin
+                        //         if L_TransferLine."Variant Code" <> L_MOBRegistration."Variant Code" then begin
+                        //             CalledFromScanner := true;
+
+                        //             L_TransferLine.Validate("Variant Code", L_MOBRegistration."Variant Code");
+                        //             L_TransferLine.Modify();
+                        //             Commit();
+                        //         end;
+                        //     end;
+                        // end;
                     end;
                 end;
             until L_MOBRegistration.Next() = 0;
