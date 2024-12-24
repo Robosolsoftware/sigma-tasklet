@@ -106,7 +106,59 @@ codeunit 50304 ReceiveChanges
     var
         L_PurchaseHeader: Record "Purchase Header";
         L_WarehouseReciptLine: Record "Warehouse Receipt Line";
+        L_ItemVariant: Record "Item Variant";
+        _ErrorMessage: Text[50000];
+        L_Item: Record Item;
+        MOBToolbox: Codeunit "MOB Toolbox";
+        MobWmsRegistration: Record "MOB WMS Registration";
     begin
+        #Region SBB-81 - [19/12/2024]+++
+        Clear(_ErrorMessage);
+        L_WarehouseReciptLine.Reset();
+        L_WarehouseReciptLine.SetRange("No.", _WhseReceiptHeader."No.");
+        if L_WarehouseReciptLine.FindSet() then begin
+            repeat
+                if L_WarehouseReciptLine."Source Document" = L_WarehouseReciptLine."Source Document"::"Purchase Order" then begin
+                    // Try to find the registrations
+                    MobWmsRegistration.SetRange("Posting MessageId", _WhseReceiptHeader."MOB Posting MessageId");
+                    MobWmsRegistration.SetRange(Type, MobWmsRegistration.Type::Receive);
+                    MobWmsRegistration.SetRange("Order No.", L_WarehouseReciptLine."No.");
+                    MobWmsRegistration.SetRange("Line No.", L_WarehouseReciptLine."Line No.");
+                    MobWmsRegistration.SetRange(Handled, false);
+                    if MobWmsRegistration.FindFirst() then begin
+                        L_Item.Reset();
+                        L_Item.SetRange("No.", L_WarehouseReciptLine."Item No.");
+                        if L_Item.FindFirst() then begin
+                            if (L_Item.Blocked = true) Or (L_Item."Purchasing Blocked" = true) then begin
+                                if _ErrorMessage <> '' then begin
+                                    _ErrorMessage := _ErrorMessage + MOBToolbox.CRLFSeparator() + StrSubstNo('Item/Variant Code: %1 is Blocked. Line Number: %2', L_WarehouseReciptLine."Item No.", L_WarehouseReciptLine."Line No.", L_WarehouseReciptLine."Item No.");
+                                end else begin
+                                    _ErrorMessage := StrSubstNo('Item/Variant Code: %1 is Blocked. Line Number: %2', L_WarehouseReciptLine."Item No.", L_WarehouseReciptLine."Line No.", L_WarehouseReciptLine."Item No.");
+                                end;
+                            end else begin
+                                L_ItemVariant.Reset();
+                                L_ItemVariant.SetRange("Item No.", L_WarehouseReciptLine."Item No.");
+                                L_ItemVariant.SetRange(Code, L_WarehouseReciptLine."Variant Code");
+                                if L_ItemVariant.FindFirst() then begin
+                                    if (L_ItemVariant.Blocked = true) OR (L_ItemVariant."Purchasing Blocked" = true) then begin
+                                        if _ErrorMessage <> '' then begin
+                                            _ErrorMessage := _ErrorMessage + MOBToolbox.CRLFSeparator() + StrSubstNo('Item/Variant Code: %1 is Blocked. Line Number: %2', L_WarehouseReciptLine."Variant Code", L_WarehouseReciptLine."Line No.", L_WarehouseReciptLine."Item No.");
+                                        end else begin
+                                            _ErrorMessage := StrSubstNo('Item/Variant Code: %1 is Blocked. Line Number: %2', L_WarehouseReciptLine."Variant Code", L_WarehouseReciptLine."Line No.", L_WarehouseReciptLine."Item No.");
+                                        end;
+                                    end;
+                                end;
+                            end;
+                        end;
+                    end;
+                end;
+            until L_WarehouseReciptLine.Next() = 0;
+            if _ErrorMessage <> '' then
+                Error(_ErrorMessage);
+        end;
+        #EndRegion SBB-81 - [19/12/2024]+++
+
+
         IF _OrderValues.GetValue('CurtainSideVehicle', true) <> '' THEN
             Evaluate(_WhseReceiptHeader."Curtain Side Vehicle", _OrderValues.GetValue('CurtainSideVehicle', true));
 
