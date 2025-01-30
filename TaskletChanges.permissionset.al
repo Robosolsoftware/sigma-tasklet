@@ -9,5 +9,6 @@ permissionset 50300 TaskletChanges
         codeunit "WMS Adhoc Registr" = X,
         codeunit "WMS ReqPage Handler" = X,
         codeunit "Count Module" = X,
-        codeunit "Unable to Pick" = X;
+        codeunit "Unable to Pick" = X,
+        codeunit "Unable To Receive" = X;
 }
