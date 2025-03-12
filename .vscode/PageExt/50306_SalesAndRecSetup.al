@@ -12,6 +12,10 @@ pageextension 50306 "Sales & Receivable Ext" extends "Sales & Receivables Setup"
             {
                 ApplicationArea = All;
             }
+            field("Auto Pick TOS"; Rec."Auto Pick TOS")
+            {
+                ApplicationArea = All;
+            }
         }
     }
 }

@@ -253,8 +253,11 @@ codeunit 50305 "Pick Module"
     var
         L_SalesLine: Record "Sales Line";
         L_TransferLine: Record "Transfer Line";
+        L_Qty: Decimal;
+        L_SalesSetup: Record "Sales & Receivables Setup";
     begin
         Clear(CalledFromScanner);
+        L_SalesSetup.Get();
 
         if _WarehouseActivityLine."Activity Type" = _WarehouseActivityLine."Activity Type"::"Invt. Pick" then begin
             //Sales Order+++
@@ -279,6 +282,16 @@ codeunit 50305 "Pick Module"
                         //     _WarehouseActivityLine.Modify();
                         // end;
                     end;
+                    if L_SalesSetup."Auto Pick TOS" = true then begin
+                        Clear(L_Qty);
+                        Evaluate(L_Qty, _Registration.GetValue('Quantity'));
+                        if L_Qty > 0 then
+                            if L_SalesLine."Outstanding Quantity" > L_Qty then begin
+                                L_SalesLine.Validate("Unable to Pick", 'TOS');
+                                L_SalesLine.Modify();
+                            end;
+                    end;
+
                 end;
             end;
 
