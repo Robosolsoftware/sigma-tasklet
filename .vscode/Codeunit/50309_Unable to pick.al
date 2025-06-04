@@ -33,6 +33,8 @@ codeunit 50309 "Unable to Pick"
     var
         MobToolbox: Codeunit "MOB Toolbox";
         UnableToPickQuantity: Decimal;
+        L_WarehouseActvityHeader: Record "Warehouse Activity Header";
+        L_SalesHeader: Record "Sales Header";
     begin
         // Handle only this type
         if _RegistrationType <> 'UnableToPick' then
@@ -41,7 +43,19 @@ codeunit 50309 "Unable to Pick"
         if _HeaderFieldValues.GetContextValueAsDecimal('RegisteredQuantity') > 0 then
             Error('Registration for this line has already been completed. Please delete the existing registration and try again.');
 
-
+        L_WarehouseActvityHeader.Reset();
+        L_WarehouseActvityHeader.SetRange("No.", _HeaderFieldValues.Get_OrderBackendID());
+        L_WarehouseActvityHeader.SetRange(Type, L_WarehouseActvityHeader.Type::"Invt. Pick");
+        if L_WarehouseActvityHeader.FindFirst() then begin
+            L_SalesHeader.Reset();
+            L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
+            L_SalesHeader.SetRange("No.", L_WarehouseActvityHeader."Source No.");
+            if L_SalesHeader.FindFirst() then begin
+                if (L_SalesHeader."Order Category" = L_SalesHeader."Order Category"::Hospital) OR (L_SalesHeader."Order Category" = L_SalesHeader."Order Category"::Wholesale) OR (L_SalesHeader."Order Category" = L_SalesHeader."Order Category"::Tender) then begin
+                    Error('Unable To Pick not allowed for %1 order', L_SalesHeader."Order Category");
+                end;
+            end;
+        end;
 
         // Create "Decimal Step" to collect the failed quantity
         _Steps.Create_ListStepFromListValues(10, 'UnableToPickQuantity', 'Unable to pick', 'Reason:', 'Please input the Reason you were unable to pick', GetListValue, 'TOS');
@@ -120,23 +134,31 @@ codeunit 50309 "Unable to Pick"
     var
         L_WarehouseActivityLine: Record "Warehouse Activity Line";
         L_MobRegistration: Record "MOB WMS Registration";
+        L_SalesHeader: Record "Sales Header";
     begin
-        if (_WhseActivityHeader."Source Document" <> _WhseActivityHeader."Source Document"::"Outbound Transfer") then begin
-            L_WarehouseActivityLine.Reset();
-            L_WarehouseActivityLine.SetRange("No.", _WhseActivityHeader."No.");
-            L_WarehouseActivityLine.SetRange("Activity Type", _WhseActivityHeader.Type);
-            L_WarehouseActivityLine.SetRange("Action Type", L_WarehouseActivityLine."Action Type"::Take);
-            L_WarehouseActivityLine.SetRange("Unable to Pick", '');
-            if L_WarehouseActivityLine.FindSet() then begin
-                repeat
-                    L_MobRegistration.Reset();
-                    L_MobRegistration.SetRange(Type, L_MobRegistration.Type::Pick);
-                    L_MobRegistration.SetRange("Order No.", L_WarehouseActivityLine."No.");
-                    L_MobRegistration.SetRange("Source MOBSystemId", L_WarehouseActivityLine.MOBSystemID);
-                    L_MobRegistration.SetRange(Handled, false);
-                    if not L_MobRegistration.FindFirst() then
-                        Error('You cannot post because one of the line registrations is still pending. Order No.: %1. Line No.: %2. Item No.: %3', L_WarehouseActivityLine."No.", L_WarehouseActivityLine."Line No.", L_WarehouseActivityLine."Item No.");
-                until L_WarehouseActivityLine.Next() = 0;
+        L_SalesHeader.Reset();
+        L_SalesHeader.SetRange("No.", _WhseActivityHeader."Source No.");
+        L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
+        if L_SalesHeader.FindFirst() then begin
+            if (L_SalesHeader."Order Category" <> L_SalesHeader."Order Category"::Hospital) AND (L_SalesHeader."Order Category" <> L_SalesHeader."Order Category"::Tender) AND (L_SalesHeader."Order Category" <> L_SalesHeader."Order Category"::Wholesale) then begin
+                if (_WhseActivityHeader."Source Document" <> _WhseActivityHeader."Source Document"::"Outbound Transfer") then begin
+                    L_WarehouseActivityLine.Reset();
+                    L_WarehouseActivityLine.SetRange("No.", _WhseActivityHeader."No.");
+                    L_WarehouseActivityLine.SetRange("Activity Type", _WhseActivityHeader.Type);
+                    L_WarehouseActivityLine.SetRange("Action Type", L_WarehouseActivityLine."Action Type"::Take);
+                    L_WarehouseActivityLine.SetRange("Unable to Pick", '');
+                    if L_WarehouseActivityLine.FindSet() then begin
+                        repeat
+                            L_MobRegistration.Reset();
+                            L_MobRegistration.SetRange(Type, L_MobRegistration.Type::Pick);
+                            L_MobRegistration.SetRange("Order No.", L_WarehouseActivityLine."No.");
+                            L_MobRegistration.SetRange("Source MOBSystemId", L_WarehouseActivityLine.MOBSystemID);
+                            L_MobRegistration.SetRange(Handled, false);
+                            if not L_MobRegistration.FindFirst() then
+                                Error('You cannot post because one of the line registrations is still pending. Order No.: %1. Line No.: %2. Item No.: %3', L_WarehouseActivityLine."No.", L_WarehouseActivityLine."Line No.", L_WarehouseActivityLine."Item No.");
+                        until L_WarehouseActivityLine.Next() = 0;
+                    end;
+                end;
             end;
         end;
     end;
@@ -147,6 +169,7 @@ codeunit 50309 "Unable to Pick"
     var
         L_WarehouseActivityLine: Record "Warehouse Activity Line";
         L_WarehouseActivityHeader: Record "Warehouse Activity Header";
+        L_SalesHeader: Record "Sales Header";
     begin
         L_WarehouseActivityLine.Reset();
         _RecRef.SetTable(L_WarehouseActivityLine);
@@ -155,8 +178,15 @@ codeunit 50309 "Unable to Pick"
             L_WarehouseActivityHeader.SetRange("No.", L_WarehouseActivityLine."No.");
             L_WarehouseActivityHeader.SetRange(Type, L_WarehouseActivityLine."Activity Type");
             if L_WarehouseActivityHeader.FindFirst() then begin
-                if (L_WarehouseActivityHeader."Source Document" <> L_WarehouseActivityHeader."Source Document"::"Outbound Transfer") then
-                    L_WarehouseActivityHeader.Delete(true);
+                L_SalesHeader.Reset();
+                L_SalesHeader.SetRange("No.", L_WarehouseActivityHeader."Source No.");
+                L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
+                if L_SalesHeader.FindFirst() then begin
+                    if (L_SalesHeader."Order Category" <> L_SalesHeader."Order Category"::Hospital) AND (L_SalesHeader."Order Category" <> L_SalesHeader."Order Category"::Tender) AND (L_SalesHeader."Order Category" <> L_SalesHeader."Order Category"::Wholesale) then begin
+                        if (L_WarehouseActivityHeader."Source Document" <> L_WarehouseActivityHeader."Source Document"::"Outbound Transfer") then
+                            L_WarehouseActivityHeader.Delete(true);
+                    end;
+                end;
             end;
         end;
     end;
