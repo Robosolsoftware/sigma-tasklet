@@ -10,5 +10,6 @@ permissionset 50300 TaskletChanges
         codeunit "WMS ReqPage Handler" = X,
         codeunit "Count Module" = X,
         codeunit "Unable to Pick" = X,
-        codeunit "Unable To Receive" = X;
+        codeunit "Unable To Receive" = X,
+        codeunit "Clear Knapp Doc Queue List" = X;
 }

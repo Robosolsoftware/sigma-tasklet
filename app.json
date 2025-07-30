@@ -2,7 +2,7 @@
   "id": "9bcc50e9-5022-4030-bd3c-b4cdad4ff719",
   "name": "Interim WMS Tasklet Customisation",
   "publisher": "Robosol",
-  "version": "24.0.0.40",
+  "version": "24.0.0.42",
   "brief": "",
   "description": "",
   "privacyStatement": "",
@@ -21,19 +21,19 @@
       "id": "89b2d3ff-cff9-4506-9a14-597a5b6d370f",
       "name": "Interim WMS BC Customisation",
       "publisher": "Robosol",
-      "version": "24.0.0.64"
+      "version": "24.1.0.49"
     },
     {
       "id": "0a10dfb9-c53c-4222-9ca2-25758f9ff410",
       "name": "Pharma Documents",
       "publisher": "Robosol",
-      "version": "24.0.0.38"
+      "version": "24.2.0.51"
     },
     {
       "id": "5b6c6c41-8944-489c-8020-627e5ff808d3",
       "name": "Knapp Integration",
       "publisher": "Robosol",
-      "version": "24.0.0.26"
+      "version": "24.0.0.66"
     }
 
   ],

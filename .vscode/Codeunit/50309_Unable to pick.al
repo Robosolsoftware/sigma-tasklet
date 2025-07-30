@@ -62,9 +62,25 @@ codeunit 50309 "Unable to Pick"
         _Steps.Set_optional(true);
     end;
 
-    local procedure GetListValue(): Text[100]
+    local procedure GetListValue(): Text[500000]
+    var
+        L_UnableToPick: Record "Unable To Pick";
+        TextValue: Text[500000];
     begin
-        exit('TOS' + ';' + 'Damaged' + ';' + '');
+        Clear(TextValue);
+        L_UnableToPick.Reset();
+        if L_UnableToPick.FindSet() then begin
+            repeat
+                if TextValue <> '' then
+                    TextValue := TextValue + ';' + L_UnableToPick.Code
+                else
+                    TextValue := L_UnableToPick.Code;
+            until L_UnableToPick.Next() = 0;
+        end;
+        exit(TextValue);
+
+
+        //exit('TOS' + ';' + 'Damaged' + ';' + '');
     end;
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Adhoc Registr.", 'OnPostAdhocRegistrationOnCustomRegistrationType', '', true, true)]
