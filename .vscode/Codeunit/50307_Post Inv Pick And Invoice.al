@@ -57,12 +57,10 @@ codeunit 50307 "Post Inv Pick & Invoice"
 
 
 
-    //SBB-485++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    // [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Pick", 'OnPostPickOrder_OnBeforeRunWhseActivityPost', '', false, false)]
-    // local procedure OnPostPickOrder_OnBeforeRunWhseActivityPost(var _WhseActPost: Codeunit "Whse.-Activity-Post")
-    // begin
-    //     //Set to Post Invoice Also++
-    //     _WhseActPost.SetInvoiceSourceDoc(true);
-    // end;
-    //SBB-485++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Pick", 'OnPostPickOrder_OnBeforeRunWhseActivityPost', '', false, false)]
+    local procedure OnPostPickOrder_OnBeforeRunWhseActivityPost(var _WhseActPost: Codeunit "Whse.-Activity-Post")
+    begin
+        //Set to Post Invoice Also++
+        _WhseActPost.SetInvoiceSourceDoc(true);
+    end;
 }
