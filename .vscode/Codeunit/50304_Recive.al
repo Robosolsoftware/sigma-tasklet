@@ -87,17 +87,19 @@ codeunit 50304 ReceiveChanges
         end;
     end;
 
-    //Add Header Step on warehouse Receive order
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Receive", 'OnGetReceiveOrderLines_OnAddStepsToAnyHeader', '', true, true)]
-    procedure OnGetReceiveOrderLines_OnAddStepsToAnyHeader(_RecRef: RecordRef; var _StepsElement: Record "MOB Steps Element")
-    begin
-        with _StepsElement do begin
-            if (_RecRef.Number() in [DataBase::"Warehouse Receipt Header", Database::"Purchase Header", Database::"Transfer Header"]) then begin
-                Create_RadioButtonStep(50000, 'CurtainSideVehicle', 'Curtain Side Vehicle', '', '', '', 'True;False');
-                Create_RadioButtonStep(50001, 'DataLoggerReceived', 'Data Logger Received', '', '', '', 'True;False');
-            end;
-        end;
-    end;
+
+    //Asked for remove SBB-586
+    // //Add Header Step on warehouse Receive order
+    // [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Receive", 'OnGetReceiveOrderLines_OnAddStepsToAnyHeader', '', true, true)]
+    // procedure OnGetReceiveOrderLines_OnAddStepsToAnyHeader(_RecRef: RecordRef; var _StepsElement: Record "MOB Steps Element")
+    // begin
+    //     with _StepsElement do begin
+    //         if (_RecRef.Number() in [DataBase::"Warehouse Receipt Header", Database::"Purchase Header", Database::"Transfer Header"]) then begin
+    //             Create_RadioButtonStep(50000, 'CurtainSideVehicle', 'Curtain Side Vehicle', '', '', '', 'True;False');
+    //             Create_RadioButtonStep(50001, 'DataLoggerReceived', 'Data Logger Received', '', '', '', 'True;False');
+    //         end;
+    //     end;
+    // end;
 
 
     //Update CurtainSideVehicle and DataLoggerReceived  on receipt header+++
@@ -158,53 +160,56 @@ codeunit 50304 ReceiveChanges
         end;
         #EndRegion SBB-81 - [19/12/2024]+++
 
+        #Region Asked for remove SBB-586
+        // IF _OrderValues.GetValue('CurtainSideVehicle', true) <> '' THEN
+        //     Evaluate(_WhseReceiptHeader."Curtain Side Vehicle", _OrderValues.GetValue('CurtainSideVehicle', true));
 
-        IF _OrderValues.GetValue('CurtainSideVehicle', true) <> '' THEN
-            Evaluate(_WhseReceiptHeader."Curtain Side Vehicle", _OrderValues.GetValue('CurtainSideVehicle', true));
+        // IF _OrderValues.GetValue('DataLoggerReceived', true) <> '' THEN
+        //     Evaluate(_WhseReceiptHeader."Data Logger Received", _OrderValues.GetValue('DataLoggerReceived', true));
 
-        IF _OrderValues.GetValue('DataLoggerReceived', true) <> '' THEN
-            Evaluate(_WhseReceiptHeader."Data Logger Received", _OrderValues.GetValue('DataLoggerReceived', true));
-
-        //Update Purchase Header for Data flow in Posted documents++
-        L_WarehouseReciptLine.Reset();
-        L_WarehouseReciptLine.SetRange("No.", _WhseReceiptHeader."No.");
-        if L_WarehouseReciptLine.FindSet() then begin
-            repeat
-                L_PurchaseHeader.Reset();
-                L_PurchaseHeader.SetRange("Document Type", L_PurchaseHeader."Document Type"::Order);
-                L_PurchaseHeader.SetRange("No.", L_WarehouseReciptLine."Source No.");
-                if L_PurchaseHeader.FindFirst() then begin
-                    Evaluate(L_PurchaseHeader."Curtain Side Vehicle", _OrderValues.GetValue('CurtainSideVehicle', true));
-                    Evaluate(L_PurchaseHeader."Data Logger Received", _OrderValues.GetValue('DataLoggerReceived', true));
-                    L_PurchaseHeader.Modify();
-                end;
-            until L_WarehouseReciptLine.Next() = 0;
-        end;
+        // //Update Purchase Header for Data flow in Posted documents++
+        // L_WarehouseReciptLine.Reset();
+        // L_WarehouseReciptLine.SetRange("No.", _WhseReceiptHeader."No.");
+        // if L_WarehouseReciptLine.FindSet() then begin
+        //     repeat
+        //         L_PurchaseHeader.Reset();
+        //         L_PurchaseHeader.SetRange("Document Type", L_PurchaseHeader."Document Type"::Order);
+        //         L_PurchaseHeader.SetRange("No.", L_WarehouseReciptLine."Source No.");
+        //         if L_PurchaseHeader.FindFirst() then begin
+        //             Evaluate(L_PurchaseHeader."Curtain Side Vehicle", _OrderValues.GetValue('CurtainSideVehicle', true));
+        //             Evaluate(L_PurchaseHeader."Data Logger Received", _OrderValues.GetValue('DataLoggerReceived', true));
+        //             L_PurchaseHeader.Modify();
+        //         end;
+        //     until L_WarehouseReciptLine.Next() = 0;
+        // end;
+        #EndRegion Asked for remove SBB-586
     end;
 
-    //Update CurtainSideVehicle and DataLoggerReceived  on Purchase header+++
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Receive", 'OnPostReceiveOrder_OnBeforePostPurchaseOrder', '', true, true)]
-    procedure OnPostReceiveOrder_OnBeforePostPurchaseOrder(var _OrderValues: Record "MOB Common Element"; var _PurchHeader: Record "Purchase Header")
-    begin
-        IF _OrderValues.GetValue('CurtainSideVehicle', true) <> '' THEN
-            Evaluate(_PurchHeader."Curtain Side Vehicle", _OrderValues.GetValue('CurtainSideVehicle', true));
+    #Region Asked for remove SBB-586
+    // //Update CurtainSideVehicle and DataLoggerReceived  on Purchase header+++
+    // [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Receive", 'OnPostReceiveOrder_OnBeforePostPurchaseOrder', '', true, true)]
+    // procedure OnPostReceiveOrder_OnBeforePostPurchaseOrder(var _OrderValues: Record "MOB Common Element"; var _PurchHeader: Record "Purchase Header")
+    // begin
+    //     IF _OrderValues.GetValue('CurtainSideVehicle', true) <> '' THEN
+    //         Evaluate(_PurchHeader."Curtain Side Vehicle", _OrderValues.GetValue('CurtainSideVehicle', true));
 
-        IF _OrderValues.GetValue('DataLoggerReceived', true) <> '' THEN
-            Evaluate(_PurchHeader."Data Logger Received", _OrderValues.GetValue('DataLoggerReceived', true));
+    //     IF _OrderValues.GetValue('DataLoggerReceived', true) <> '' THEN
+    //         Evaluate(_PurchHeader."Data Logger Received", _OrderValues.GetValue('DataLoggerReceived', true));
 
-    end;
+    // end;
 
-    //Update CurtainSideVehicle and DataLoggerReceived  on Transfer header+++
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Receive", 'OnPostReceiveOrder_OnBeforePostTransferOrder', '', true, true)]
-    procedure OnPostReceiveOrder_OnBeforePostTransferOrder(var _OrderValues: Record "MOB Common Element"; var _TransferHeader: Record "Transfer Header")
-    begin
-        IF _OrderValues.GetValue('CurtainSideVehicle', true) <> '' THEN
-            Evaluate(_TransferHeader."Curtain Side Vehicle", _OrderValues.GetValue('CurtainSideVehicle', true));
+    // //Update CurtainSideVehicle and DataLoggerReceived  on Transfer header+++
+    // [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Receive", 'OnPostReceiveOrder_OnBeforePostTransferOrder', '', true, true)]
+    // procedure OnPostReceiveOrder_OnBeforePostTransferOrder(var _OrderValues: Record "MOB Common Element"; var _TransferHeader: Record "Transfer Header")
+    // begin
+    //     IF _OrderValues.GetValue('CurtainSideVehicle', true) <> '' THEN
+    //         Evaluate(_TransferHeader."Curtain Side Vehicle", _OrderValues.GetValue('CurtainSideVehicle', true));
 
-        IF _OrderValues.GetValue('DataLoggerReceived', true) <> '' THEN
-            Evaluate(_TransferHeader."Data Logger Received", _OrderValues.GetValue('DataLoggerReceived', true));
+    //     IF _OrderValues.GetValue('DataLoggerReceived', true) <> '' THEN
+    //         Evaluate(_TransferHeader."Data Logger Received", _OrderValues.GetValue('DataLoggerReceived', true));
 
-    end;
+    // end;
+    #EndRegion Asked for remove SBB-586
 
     // //Update NoofPallet on receipt header+++
     // [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Receive", 'OnPostReceiveOrder_OnBeforePostAnyOrder', '', true, true)]
