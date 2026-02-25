@@ -2,7 +2,7 @@
   "id": "9bcc50e9-5022-4030-bd3c-b4cdad4ff719",
   "name": "Interim WMS Tasklet Customisation",
   "publisher": "Robosol",
-  "version": "24.0.0.46",
+  "version": "24.0.0.47",
   "brief": "",
   "description": "",
   "privacyStatement": "",
@@ -34,6 +34,12 @@
       "name": "Knapp Integration",
       "publisher": "Robosol",
       "version": "24.0.0.66"
+    },
+    {
+      "id": "932326fa-e5e0-46a0-87c9-1aa01a038111",
+      "name": "Ochannel 2.0",
+      "publisher": "Robosol",
+      "version": "24.0.1.65"
     }
 
   ],

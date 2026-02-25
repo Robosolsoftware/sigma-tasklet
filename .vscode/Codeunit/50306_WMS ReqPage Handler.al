@@ -205,7 +205,7 @@ codeunit 50306 "WMS ReqPage Handler"
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB ReportParameters Mgt.", 'OnCreateReportParameters', '', true, true)]
     local procedure OnCreateReportParametersKnappLabel(_MobReport: Record "Mob Report"; _SourceRecRef: RecordRef; var _RequestValues: Record "MOB NS Request Element" temporary; var _OptionsFieldValues: Record "MOB ReportParameters Element"; var _DataItemViews: Record "MOB ReportParameters Element"; var _IsHandled: Boolean)
     var
-        L_Barcode: Record Barcodes;
+        L_Barcode: Record "Polar Speed Barcode";
         KnappOrdResponse: Record "Knapp Order Response";
         SalesHeader: Record "Sales Header";
         BarcodeString: Text;
@@ -221,7 +221,6 @@ codeunit 50306 "WMS ReqPage Handler"
     begin
         if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"PolarSpeed Label1" then
             exit;
-        // Error('StartDate: %1..EndDate: %2', CreateDateTime(WorkDate(), 000000T), CreateDateTime(WorkDate(), 235959T));
 
         KnappOrdResponse.Reset();
         KnappOrdResponse.SetRange("Document Type", KnappOrdResponse."Document Type"::Order);
@@ -235,7 +234,6 @@ codeunit 50306 "WMS ReqPage Handler"
             if not L_Barcode.FindFirst() then begin
                 SalesHeader.Reset();
                 SalesHeader.SetRange("Document Type", SalesHeader."Document Type"::Order);
-                //SalesHeader.SetRange("No.", '0001970439');
                 SalesHeader.SetRange("No.", KnappOrdResponse."Document No.");
                 if SalesHeader.FindFirst() then begin
                     L_Barcode.Init();
@@ -290,7 +288,7 @@ codeunit 50306 "WMS ReqPage Handler"
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB ReportParameters Mgt.", 'OnCreateReportParameters', '', true, true)]
     local procedure OnCreateReportParametersManualLabel(_MobReport: Record "Mob Report"; _SourceRecRef: RecordRef; var _RequestValues: Record "MOB NS Request Element" temporary; var _OptionsFieldValues: Record "MOB ReportParameters Element"; var _DataItemViews: Record "MOB ReportParameters Element"; var _IsHandled: Boolean)
     var
-        L_Barcode: Record Barcodes;
+        L_Barcode: Record "Polar Speed Barcode";
         KnappOrdResponse: Record "Knapp Order Response";
         SalesHeader: Record "Sales Header";
         BarcodeString: Text;
@@ -392,7 +390,7 @@ codeunit 50306 "WMS ReqPage Handler"
 
     local procedure getlastentryno(): Integer
     var
-        barcode: Record Barcodes;
+        barcode: Record "Polar Speed Barcode";
     begin
         barcode.Reset();
         if barcode.FindLast() then
