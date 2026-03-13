@@ -388,7 +388,7 @@ codeunit 50306 "WMS ReqPage Handler"
                     L_PolarSpeedBarcodeDetails."Shipment Date" := SalesShipHDR."Shipment Date";
                     L_PolarSpeedBarcodeDetails."No. of Box / Tote Sequence" := 1;
                     L_PolarSpeedBarcodeDetails."Print Date" := WorkDate();
-                    L_PolarSpeedBarcodeDetails."Barcode No." := NoSeriesMgt.GetNextNo('IPICK', WorkDate(), true);
+                    L_PolarSpeedBarcodeDetails."Barcode No." := NoSeriesMgt.GetNextNo('PSLABEL', WorkDate(), true);
                     Clear(VarBarcode);
                     VarBarcode := L_PolarSpeedBarcodeDetails."Barcode No.";
                     SalesInvHDR.Reset();
