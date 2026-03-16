@@ -201,6 +201,10 @@ codeunit 50306 "WMS ReqPage Handler"
             _Steps.Set_header('Tote Sequence');
             _Steps.Set_label('Enter Tote Sequence:');
             _Steps.Set_defaultValue(0);
+            _Steps.Set_minValue(1);
+            _Steps.Set_maxValue(99);
+            _Steps.Set_length(99);
+
 
             MobReportPrintSteps.CreateReportPrinterAndNoOfCopiesSteps(_MobReport, _RequestValues, _Steps, 90, 0);
             _IsHandled := true;
@@ -226,23 +230,31 @@ codeunit 50306 "WMS ReqPage Handler"
         L_SalesInvoiceHeader: Record "Sales Invoice Header";
         OrderNo: Code[20];
         date: Date;
+        L_SalesLine: Record "Sales Line";
+        L_Item: Record Item;
+        L_WarhouseClass: Record "Warehouse Class";
     begin
         if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"PolarSpeed Label1" then
             exit;
 
         #Region Check Tote sequence is already available for scanned tote and same day+++
         Clear(OrderNo);
-        L_PolarSpeedBarcodeDetails.Reset();
-        L_PolarSpeedBarcodeDetails.SetRange("Tote/Order No.", _RequestValues.GetValue('ToteNo'));
-        L_PolarSpeedBarcodeDetails.SetRange("Print Date", WorkDate());
-        if L_PolarSpeedBarcodeDetails.FindFirst() then begin
-            OrderNo := L_PolarSpeedBarcodeDetails."Order No.";
+        KnappOrdResponse.Reset();
+        KnappOrdResponse.SetRange("Document Type", KnappOrdResponse."Document Type"::Order);
+        KnappOrdResponse.SetRange("Load Unit", _RequestValues.GetValue('ToteNo'));
+        KnappOrdResponse.SetFilter(Quantity, '>%1', 0);
+        KnappOrdResponse.SetFilter(SystemCreatedAt, '%1..%2', CreateDateTime(WorkDate(), 000000T), CreateDateTime(WorkDate(), 235959T));
+        if KnappOrdResponse.FindFirst() then begin
+            OrderNo := KnappOrdResponse."Document No.";
             L_PolarSpeedBarcodeDetails.Reset();
             L_PolarSpeedBarcodeDetails.SetRange("Order No.", OrderNo);
             L_PolarSpeedBarcodeDetails.SetRange("No. of Box / Tote Sequence", _RequestValues.GetValueAsInteger('ToteSeq'));
             L_PolarSpeedBarcodeDetails.SetRange("Print Date", WorkDate());
-            if L_PolarSpeedBarcodeDetails.FindFirst() then
-                Error('The tote sequence %1 already exists for tote %2', L_PolarSpeedBarcodeDetails."Tote/Order No.", L_PolarSpeedBarcodeDetails."No. of Box / Tote Sequence");
+            if L_PolarSpeedBarcodeDetails.FindSet() then
+                repeat
+                    if L_PolarSpeedBarcodeDetails."Tote/Order No." <> _RequestValues.GetValue('ToteNo') then
+                        Error('The tote sequence %1 already exists for tote %2', L_PolarSpeedBarcodeDetails."Tote/Order No.", L_PolarSpeedBarcodeDetails."No. of Box / Tote Sequence");
+                until L_PolarSpeedBarcodeDetails.Next() = 0;
         end;
         #EndRegion Check Tote sequence is already available for scanned tote and same day+++
 
@@ -276,6 +288,25 @@ codeunit 50306 "WMS ReqPage Handler"
                     L_PolarSpeedBarcodeDetails."Print Date" := WorkDate();
                     L_PolarSpeedBarcodeDetails."Shipment Date" := SalesHeader."Shipment Date";
                     L_PolarSpeedBarcodeDetails."Barcode No." := NoSeriesMgt.GetNextNo('PSLABEL', WorkDate(), true);
+                    //Get Temprature++
+                    L_SalesLine.Reset();
+                    L_SalesLine.SetRange("No.", KnappOrdResponse."Item No.");
+                    L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                    L_SalesLine.SetRange("Document No.", KnappOrdResponse."Document No.");
+                    L_SalesLine.SetRange("Line No.", KnappOrdResponse."Line No.");
+                    if L_SalesLine.FindFirst() then begin
+                        if L_Item.Get(L_SalesLine."No.") then begin
+                            L_WarhouseClass.Reset();
+                            L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
+                            if L_WarhouseClass.FindFirst() then begin
+                                if L_WarhouseClass.Fridge = true then
+                                    L_PolarSpeedBarcodeDetails.Temprature := 'Chilled'
+                                else
+                                    L_PolarSpeedBarcodeDetails.Temprature := 'Ambient';
+                            end else
+                                L_PolarSpeedBarcodeDetails.Temprature := 'Ambient';
+                        end;
+                    end;
                     if L_PolarSpeedBarcodeDetails.Insert() then begin
                         L_PolarSpeedBarcodeDetails.Reset();
                         L_PolarSpeedBarcodeDetails.SetRange("Tote/Order No.", _RequestValues.GetValue('ToteNo'));
@@ -337,6 +368,9 @@ codeunit 50306 "WMS ReqPage Handler"
         i: Integer;
         L_Box: Integer;
         VarBarcode: text[25];
+        L_SalesInvoiceLine: Record "Sales Invoice Line";
+        L_Item: Record Item;
+        L_WarhouseClass: Record "Warehouse Class";
     begin
         if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"PolarSpeed Label2" then
             exit;
@@ -368,9 +402,28 @@ codeunit 50306 "WMS ReqPage Handler"
                         SalesInvHDR.SetRange("Inv. Pick No.", _RequestValues.GetValue('OrderNo'));
                         if SalesInvHDR.FindFirst() then begin
                             L_PolarSpeedBarcodeDetails."Sales Invoice No." := SalesInvHDR."No.";
+
+                            //Get Temprature++
+                            L_SalesInvoiceLine.Reset();
+                            L_SalesInvoiceLine.SetRange("Document No.", SalesInvHDR."No.");
+                            if L_SalesInvoiceLine.FindFirst() then begin
+                                if L_Item.Get(L_SalesInvoiceLine."No.") then begin
+                                    L_WarhouseClass.Reset();
+                                    L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
+                                    if L_WarhouseClass.FindFirst() then begin
+                                        if L_WarhouseClass.Fridge = true then
+                                            L_PolarSpeedBarcodeDetails.Temprature := 'Chilled'
+                                        else
+                                            L_PolarSpeedBarcodeDetails.Temprature := 'Ambient';
+                                    end else
+                                        L_PolarSpeedBarcodeDetails.Temprature := 'Ambient';
+                                end;
+                            end;
                         end;
                         L_PolarSpeedBarcodeDetails.Insert()
                     end;
+
+                    //Print Label
                     L_PolarSpeedBarcodeDetails.Reset();
                     L_PolarSpeedBarcodeDetails.SetRange("Tote/Order No.", _RequestValues.GetValue('OrderNo'));
                     L_PolarSpeedBarcodeDetails.SetRange("Print Date", WorkDate());
@@ -395,9 +448,28 @@ codeunit 50306 "WMS ReqPage Handler"
                     SalesInvHDR.SetRange("Inv. Pick No.", _RequestValues.GetValue('OrderNo'));
                     if SalesInvHDR.FindFirst() then begin
                         L_PolarSpeedBarcodeDetails."Sales Invoice No." := SalesInvHDR."No.";
+
+                        //Get Temprature++
+                        L_SalesInvoiceLine.Reset();
+                        L_SalesInvoiceLine.SetRange("Document No.", SalesInvHDR."No.");
+                        if L_SalesInvoiceLine.FindFirst() then begin
+                            if L_Item.Get(L_SalesInvoiceLine."No.") then begin
+                                L_WarhouseClass.Reset();
+                                L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
+                                if L_WarhouseClass.FindFirst() then begin
+                                    if L_WarhouseClass.Fridge = true then
+                                        L_PolarSpeedBarcodeDetails.Temprature := 'Chilled'
+                                    else
+                                        L_PolarSpeedBarcodeDetails.Temprature := 'Ambient';
+                                end else
+                                    L_PolarSpeedBarcodeDetails.Temprature := 'Ambient';
+                            end;
+                        end;
                     end;
                     L_PolarSpeedBarcodeDetails.Insert()
                 end;
+
+                //Print label
                 L_PolarSpeedBarcodeDetails.Reset();
                 L_PolarSpeedBarcodeDetails.SetRange("Tote/Order No.", _RequestValues.GetValue('OrderNo'));
                 L_PolarSpeedBarcodeDetails.SetRange("Print Date", WorkDate());
