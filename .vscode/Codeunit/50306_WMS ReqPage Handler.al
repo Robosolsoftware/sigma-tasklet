@@ -233,6 +233,7 @@ codeunit 50306 "WMS ReqPage Handler"
         L_SalesLine: Record "Sales Line";
         L_Item: Record Item;
         L_WarhouseClass: Record "Warehouse Class";
+        L_SalesInvoiceLine: Record "Sales Invoice Line";
     begin
         if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"PolarSpeed Label1" then
             exit;
@@ -246,6 +247,11 @@ codeunit 50306 "WMS ReqPage Handler"
         KnappOrdResponse.SetFilter(SystemCreatedAt, '%1..%2', CreateDateTime(WorkDate(), 000000T), CreateDateTime(WorkDate(), 235959T));
         if KnappOrdResponse.FindFirst() then begin
             OrderNo := KnappOrdResponse."Document No.";
+            if OrderNo = '' then
+                Error('No label to print');
+
+
+            //Check Duplicat Tote sequence+++
             L_PolarSpeedBarcodeDetails.Reset();
             L_PolarSpeedBarcodeDetails.SetRange("Order No.", OrderNo);
             L_PolarSpeedBarcodeDetails.SetRange("No. of Box / Tote Sequence", _RequestValues.GetValueAsInteger('ToteSeq'));
@@ -258,6 +264,8 @@ codeunit 50306 "WMS ReqPage Handler"
         end;
         #EndRegion Check Tote sequence is already available for scanned tote and same day+++
 
+
+        //Create PS label Details & Print the label+++ 
         KnappOrdResponse.Reset();
         KnappOrdResponse.SetRange("Document Type", KnappOrdResponse."Document Type"::Order);
         KnappOrdResponse.SetRange("Load Unit", _RequestValues.GetValue('ToteNo'));
@@ -279,12 +287,14 @@ codeunit 50306 "WMS ReqPage Handler"
                     L_PolarSpeedBarcodeDetails."Order Category" := L_PolarSpeedBarcodeDetails."Order Category"::Knapp;
                     L_PolarSpeedBarcodeDetails."Customer No." := SalesHeader."Sell-to Customer No.";
                     L_PolarSpeedBarcodeDetails."Order No." := SalesHeader."No.";
+                    //NOTE - In sigma One order have only one shipment and Invoice for KNAPP order++
                     L_SalesInvoiceHeader.Reset();
                     L_SalesInvoiceHeader.SetRange("Order No.", SalesHeader."No.");
                     if L_SalesInvoiceHeader.FindFirst() then begin
                         L_PolarSpeedBarcodeDetails."Sales Invoice No." := L_SalesInvoiceHeader."No.";
                     end else
                         L_PolarSpeedBarcodeDetails."Sales Invoice No." := SalesHeader."Posting No.";
+
                     L_PolarSpeedBarcodeDetails."Print Date" := WorkDate();
                     L_PolarSpeedBarcodeDetails."Shipment Date" := SalesHeader."Shipment Date";
                     L_PolarSpeedBarcodeDetails."Barcode No." := NoSeriesMgt.GetNextNo('PSLABEL', WorkDate(), true);
@@ -314,21 +324,70 @@ codeunit 50306 "WMS ReqPage Handler"
                         if L_PolarSpeedBarcodeDetails.FindFirst() then begin
                             _DataItemViews.SetValue('Barcodes', L_PolarSpeedBarcodeDetails.GetView(false));
                             _OptionsFieldValues.SetValue('NoOfCopies', 0);
+                            _IsHandled := true;
+                        end;
+                    end;
+                end else begin
+                    //NOTE - In sigma One order have only one shipment and Invoice for KNAPP order++
+                    L_SalesInvoiceHeader.Reset();
+                    L_SalesInvoiceHeader.SetRange("Order No.", KnappOrdResponse."Document No.");
+                    if L_SalesInvoiceHeader.FindFirst() then begin
+                        L_PolarSpeedBarcodeDetails.Init();
+                        L_PolarSpeedBarcodeDetails."Entry No." := getlastentryno();
+                        L_PolarSpeedBarcodeDetails."Tote/Order No." := _RequestValues.GetValue('ToteNo');
+                        L_PolarSpeedBarcodeDetails."No. of Box / Tote Sequence" := _RequestValues.GetValueAsInteger('ToteSeq');
+                        L_PolarSpeedBarcodeDetails."Order Category" := L_PolarSpeedBarcodeDetails."Order Category"::Knapp;
+                        L_PolarSpeedBarcodeDetails."Customer No." := L_SalesInvoiceHeader."Sell-to Customer No.";
+                        L_PolarSpeedBarcodeDetails."Order No." := L_SalesInvoiceHeader."Order No.";
+                        L_PolarSpeedBarcodeDetails."Sales Invoice No." := L_SalesInvoiceHeader."No.";
+                        L_PolarSpeedBarcodeDetails."Print Date" := WorkDate();
+                        L_PolarSpeedBarcodeDetails."Shipment Date" := L_SalesInvoiceHeader."Shipment Date";
+                        L_PolarSpeedBarcodeDetails."Barcode No." := NoSeriesMgt.GetNextNo('PSLABEL', WorkDate(), true);
+                        //Get Temprature++
+                        L_SalesInvoiceLine.Reset();
+                        L_SalesInvoiceLine.SetRange("Document No.", KnappOrdResponse."Document No.");
+                        L_SalesInvoiceLine.SetRange("Line No.", KnappOrdResponse."Line No.");
+                        L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
+                        if L_SalesInvoiceLine.FindFirst() then begin
+                            if L_Item.Get(L_SalesInvoiceLine."No.") then begin
+                                L_WarhouseClass.Reset();
+                                L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
+                                if L_WarhouseClass.FindFirst() then begin
+                                    if L_WarhouseClass.Fridge = true then
+                                        L_PolarSpeedBarcodeDetails.Temprature := 'Chilled'
+                                    else
+                                        L_PolarSpeedBarcodeDetails.Temprature := 'Ambient';
+                                end else
+                                    L_PolarSpeedBarcodeDetails.Temprature := 'Ambient';
+                            end;
+                        end;
+                        if L_PolarSpeedBarcodeDetails.Insert() then begin
+                            L_PolarSpeedBarcodeDetails.Reset();
+                            L_PolarSpeedBarcodeDetails.SetRange("Tote/Order No.", _RequestValues.GetValue('ToteNo'));
+                            L_PolarSpeedBarcodeDetails.SetRange("Print Date", WorkDate());
+                            if L_PolarSpeedBarcodeDetails.FindFirst() then begin
+                                _DataItemViews.SetValue('Barcodes', L_PolarSpeedBarcodeDetails.GetView(false));
+                                _OptionsFieldValues.SetValue('NoOfCopies', 0);
+                                _IsHandled := true;
+                            end;
                         end;
                     end;
                 end;
             end else begin
+                //Print Label if exist+++
                 L_PolarSpeedBarcodeDetails.Reset();
                 L_PolarSpeedBarcodeDetails.SetRange("Tote/Order No.", _RequestValues.GetValue('ToteNo'));
                 L_PolarSpeedBarcodeDetails.SetRange("Print Date", WorkDate());
                 if L_PolarSpeedBarcodeDetails.FindFirst() then begin
                     _DataItemViews.SetValue('Barcodes', L_PolarSpeedBarcodeDetails.GetView(false));
                     _OptionsFieldValues.SetValue('NoOfCopies', 0);
+                    _IsHandled := true;
                 end;
             end;
         end else
             Error('No label to print');
-        _IsHandled := true;
+
+        //If _IsHandled = false then system will generate error message - default code of tasklet++
     end;
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB Report Print Lookup", 'OnLookupOnPrintReport_OnAddStepsForReport', '', true, true)]
@@ -375,6 +434,8 @@ codeunit 50306 "WMS ReqPage Handler"
         if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"PolarSpeed Label2" then
             exit;
 
+
+        //Create PS label Details & Print the label+++ 
         SalesShipHDR.Reset();
         SalesShipHDR.SetRange("Inv. Pick No.", _RequestValues.GetValue('OrderNo'));//Inv. Pick Number
         if SalesShipHDR.FindFirst() then begin
@@ -398,6 +459,8 @@ codeunit 50306 "WMS ReqPage Handler"
                         L_PolarSpeedBarcodeDetails."Barcode No." := NoSeriesMgt.GetNextNo('PSLABEL', WorkDate(), true);
                         Clear(VarBarcode);
                         VarBarcode := L_PolarSpeedBarcodeDetails."Barcode No.";
+
+                        //Note - _RequestValues.GetValue('OrderNo') = Inv. Pick No. which is link between Sales Shipment Header & Sales Invoice Header, so using that to get Sales Invoice No.++
                         SalesInvHDR.Reset();
                         SalesInvHDR.SetRange("Inv. Pick No.", _RequestValues.GetValue('OrderNo'));
                         if SalesInvHDR.FindFirst() then begin
@@ -430,6 +493,7 @@ codeunit 50306 "WMS ReqPage Handler"
                     if L_PolarSpeedBarcodeDetails.FindSet() then begin
                         _DataItemViews.SetValue('Barcodes', L_PolarSpeedBarcodeDetails.GetView(false));
                         _OptionsFieldValues.SetValue('NoOfCopies', 0);
+                        _IsHandled := true;
                     end;
                 end else begin   ///No of print 0
                     L_PolarSpeedBarcodeDetails.Init();
@@ -444,6 +508,7 @@ codeunit 50306 "WMS ReqPage Handler"
                     L_PolarSpeedBarcodeDetails."Barcode No." := NoSeriesMgt.GetNextNo('PSLABEL', WorkDate(), true);
                     Clear(VarBarcode);
                     VarBarcode := L_PolarSpeedBarcodeDetails."Barcode No.";
+                    //Note - _RequestValues.GetValue('OrderNo') = Inv. Pick No. which is link between Sales Shipment Header & Sales Invoice Header, so using that to get Sales Invoice No.++
                     SalesInvHDR.Reset();
                     SalesInvHDR.SetRange("Inv. Pick No.", _RequestValues.GetValue('OrderNo'));
                     if SalesInvHDR.FindFirst() then begin
@@ -468,7 +533,6 @@ codeunit 50306 "WMS ReqPage Handler"
                     end;
                     L_PolarSpeedBarcodeDetails.Insert()
                 end;
-
                 //Print label
                 L_PolarSpeedBarcodeDetails.Reset();
                 L_PolarSpeedBarcodeDetails.SetRange("Tote/Order No.", _RequestValues.GetValue('OrderNo'));
@@ -476,20 +540,23 @@ codeunit 50306 "WMS ReqPage Handler"
                 if L_PolarSpeedBarcodeDetails.FindSet() then begin
                     _DataItemViews.SetValue('Barcodes', L_PolarSpeedBarcodeDetails.GetView(false));
                     _OptionsFieldValues.SetValue('NoOfCopies', 0);
+                    _IsHandled := true;
                 end;
-            end else begin   ///Same day print
+            end else begin
+                //Print Label if exist+++
                 L_PolarSpeedBarcodeDetails.Reset();
                 L_PolarSpeedBarcodeDetails.SetRange("Tote/Order No.", _RequestValues.GetValue('OrderNo'));
                 L_PolarSpeedBarcodeDetails.SetRange("Print Date", WorkDate());
                 if L_PolarSpeedBarcodeDetails.FindSet() then begin
                     _DataItemViews.SetValue('Barcodes', L_PolarSpeedBarcodeDetails.GetView(false));
                     _OptionsFieldValues.SetValue('NoOfCopies', 0);
+                    _IsHandled := true;
                 end;
             end;
         end else
             Error('No label to print');
-        _IsHandled := true;
 
+        //If _IsHandled = false then system will generate error message - default code of tasklet++
     end;
 
 
