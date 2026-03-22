@@ -154,18 +154,27 @@ codeunit 50306 "WMS ReqPage Handler"
         //Update No Of Box++
         L_SalesShipmentHeader.Reset();
         L_SalesShipmentHeader.SetRange("Inv. Pick No.", _RequestValues.GetValue('InvPickNo'));
-        L_SalesShipmentHeader.SetFilter("No of Boxes", '>%1', 0); //If No. of Box Already updated then only Print label++
-        if not L_SalesShipmentHeader.FindFirst() then begin
-            L_SalesShipmentHeader.Reset();
-            L_SalesShipmentHeader.SetRange("Inv. Pick No.", _RequestValues.GetValue('InvPickNo'));
-            if L_SalesShipmentHeader.FindFirst() then begin
-                Clear(L_GetNoofCopy);
-                //Evaluate(L_GetNoofCopy, _RequestValues.GetValue('NoOfCopies'));
-                L_GetNoofCopy := _RequestValues.GetValueAsInteger('NoOfCopies');
-                L_SalesShipmentHeader."No of Boxes" := L_GetNoofCopy;
-                L_SalesShipmentHeader.Modify();
-            end;
+        if L_SalesShipmentHeader.FindFirst() then begin
+            Clear(L_GetNoofCopy);
+            //Evaluate(L_GetNoofCopy, _RequestValues.GetValue('NoOfCopies'));
+            L_GetNoofCopy := _RequestValues.GetValueAsInteger('NoOfCopies');
+            L_SalesShipmentHeader."No of Boxes" := L_GetNoofCopy;
+            L_SalesShipmentHeader.Modify();
         end;
+        // L_SalesShipmentHeader.Reset();
+        // L_SalesShipmentHeader.SetRange("Inv. Pick No.", _RequestValues.GetValue('InvPickNo'));
+        // L_SalesShipmentHeader.SetFilter("No of Boxes", '>%1', 0); //If No. of Box Already updated then only Print label++
+        // if not L_SalesShipmentHeader.FindFirst() then begin
+        //     L_SalesShipmentHeader.Reset();
+        //     L_SalesShipmentHeader.SetRange("Inv. Pick No.", _RequestValues.GetValue('InvPickNo'));
+        //     if L_SalesShipmentHeader.FindFirst() then begin
+        //         Clear(L_GetNoofCopy);
+        //         //Evaluate(L_GetNoofCopy, _RequestValues.GetValue('NoOfCopies'));
+        //         L_GetNoofCopy := _RequestValues.GetValueAsInteger('NoOfCopies');
+        //         L_SalesShipmentHeader."No of Boxes" := L_GetNoofCopy;
+        //         L_SalesShipmentHeader.Modify();
+        //     end;
+        // end;
 
 
 
@@ -425,15 +434,18 @@ codeunit 50306 "WMS ReqPage Handler"
         SalesShipHDR: Record "Sales Shipment Header";
         SalesInvHDR: Record "Sales Invoice Header";
         i: Integer;
+        j: Integer;
         L_Box: Integer;
         VarBarcode: text[25];
         L_SalesInvoiceLine: Record "Sales Invoice Line";
         L_Item: Record Item;
         L_WarhouseClass: Record "Warehouse Class";
+        L_count: integer;
+        L_Diff: Integer;
+        L_NoBox: Integer;
     begin
         if _MobReport."RequestPage Handler" <> _MobReport."RequestPage Handler"::"PolarSpeed Label2" then
             exit;
-
 
         //Create PS label Details & Print the label+++ 
         SalesShipHDR.Reset();
@@ -544,6 +556,77 @@ codeunit 50306 "WMS ReqPage Handler"
                 end;
             end else begin
                 //Print Label if exist+++
+                Clear(L_count);
+                L_PolarSpeedBarcodeDetails.Reset();
+                L_PolarSpeedBarcodeDetails.SetRange("Tote/Order No.", _RequestValues.GetValue('OrderNo'));
+                L_PolarSpeedBarcodeDetails.SetRange("Print Date", WorkDate());
+                if L_PolarSpeedBarcodeDetails.FindSet() then
+                    L_count := L_PolarSpeedBarcodeDetails.Count;
+
+                SalesShipHDR.Reset();
+                SalesShipHDR.SetRange("Inv. Pick No.", _RequestValues.GetValue('OrderNo'));//Inv. Pick Number
+                if SalesShipHDR.FindFirst() then begin
+                    if L_count < SalesShipHDR."No of Boxes" then begin
+                        L_NoBox := SalesShipHDR."No of Boxes" - L_count;
+                        for j := 1 to L_NoBox do begin
+                            L_PolarSpeedBarcodeDetails.Init();
+                            L_PolarSpeedBarcodeDetails."Entry No." := getlastentryno();
+                            L_PolarSpeedBarcodeDetails."Tote/Order No." := _RequestValues.GetValue('OrderNo');
+                            L_PolarSpeedBarcodeDetails."Order Category" := L_PolarSpeedBarcodeDetails."Order Category"::Manual;
+                            L_PolarSpeedBarcodeDetails."Customer No." := SalesShipHDR."Sell-to Customer No.";
+                            L_PolarSpeedBarcodeDetails."Order No." := SalesShipHDR."Order No.";
+                            L_PolarSpeedBarcodeDetails."Shipment Date" := SalesShipHDR."Shipment Date";
+                            L_PolarSpeedBarcodeDetails."No. of Box / Tote Sequence" := L_Box;
+                            L_Box := L_Box + 1;
+                            L_PolarSpeedBarcodeDetails."Print Date" := WorkDate();
+                            L_PolarSpeedBarcodeDetails."Barcode No." := NoSeriesMgt.GetNextNo('PSLABEL', WorkDate(), true);
+                            Clear(VarBarcode);
+                            VarBarcode := L_PolarSpeedBarcodeDetails."Barcode No.";
+
+                            //Note - _RequestValues.GetValue('OrderNo') = Inv. Pick No. which is link between Sales Shipment Header & Sales Invoice Header, so using that to get Sales Invoice No.++
+                            SalesInvHDR.Reset();
+                            SalesInvHDR.SetRange("Inv. Pick No.", _RequestValues.GetValue('OrderNo'));
+                            if SalesInvHDR.FindFirst() then begin
+                                L_PolarSpeedBarcodeDetails."Sales Invoice No." := SalesInvHDR."No.";
+
+                                //Get Temprature++
+                                L_SalesInvoiceLine.Reset();
+                                L_SalesInvoiceLine.SetRange("Document No.", SalesInvHDR."No.");
+                                if L_SalesInvoiceLine.FindFirst() then begin
+                                    if L_Item.Get(L_SalesInvoiceLine."No.") then begin
+                                        L_WarhouseClass.Reset();
+                                        L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
+                                        if L_WarhouseClass.FindFirst() then begin
+                                            if L_WarhouseClass.Fridge = true then
+                                                L_PolarSpeedBarcodeDetails.Temprature := 'Chilled'
+                                            else
+                                                L_PolarSpeedBarcodeDetails.Temprature := 'Ambient';
+                                        end else
+                                            L_PolarSpeedBarcodeDetails.Temprature := 'Ambient';
+                                    end;
+                                end;
+                            end;
+                            L_PolarSpeedBarcodeDetails.Insert();
+                        end;
+
+                    end else begin
+                        // if L_count > SalesShipHDR."No of Boxes" then begin
+                        //     L_Diff := L_count - SalesShipHDR."No of Boxes";
+                        //     L_PolarSpeedBarcodeDetails.Reset();
+                        //     L_PolarSpeedBarcodeDetails.SetRange("Tote/Order No.", _RequestValues.GetValue('OrderNo'));
+                        //     L_PolarSpeedBarcodeDetails.SetRange("Print Date", WorkDate());
+                        //     L_PolarSpeedBarcodeDetails.SetCurrentKey("Entry No.");
+                        //     L_PolarSpeedBarcodeDetails.Ascending(false);
+                        //     if L_PolarSpeedBarcodeDetails.FindSet() then begin
+                        //         repeat
+                        //             L_PolarSpeedBarcodeDetails.Delete();
+                        //             L_Diff := L_Diff - 1;
+                        //         until (L_Diff = 0) or (L_PolarSpeedBarcodeDetails.Next() = 0);
+                        //     end;
+                        // end;
+
+                    end;
+                end;
                 L_PolarSpeedBarcodeDetails.Reset();
                 L_PolarSpeedBarcodeDetails.SetRange("Tote/Order No.", _RequestValues.GetValue('OrderNo'));
                 L_PolarSpeedBarcodeDetails.SetRange("Print Date", WorkDate());
