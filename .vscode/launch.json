@@ -7,7 +7,7 @@
             "type": "al",
             "environmentType": "Sandbox",
             //"environmentName": "Sigma_UAT",
-            "environmentName": "Sigma_Copy27",
+            "environmentName": "Sigma_Copy2303",
             "tenant": "55614040-8b3d-41a1-bae8-2140b06bd0c3",
             "startupObjectId": 6181398,
             "startupObjectType": "Table",

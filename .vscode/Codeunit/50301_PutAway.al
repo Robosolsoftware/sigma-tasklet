@@ -118,70 +118,70 @@ codeunit 50301 "PutAway Module"
         end;
     end;
 
-    // [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Setup Doc. Types", 'OnAfterCreateDefaultDocumentTypes', '', true, true)]
-    // local procedure My01OnAfterCreateDefaultDocumentTypes()
-    // var
-    //     MobWmsSetupDocTypes: Codeunit "MOB WMS Setup Doc. Types";
-    // begin
-    //     MobWmsSetupDocTypes.CreateDocumentType('ValidateMyToBin', '', Codeunit::"MOB WMS Whse. Inquiry");
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Setup Doc. Types", 'OnAfterCreateDefaultDocumentTypes', '', true, true)]
+    local procedure My01OnAfterCreateDefaultDocumentTypes()
+    var
+        MobWmsSetupDocTypes: Codeunit "MOB WMS Setup Doc. Types";
+    begin
+        MobWmsSetupDocTypes.CreateDocumentType('ValidateMyToBin', '', Codeunit::"MOB WMS Whse. Inquiry");
 
-    // end;
+    end;
 
-    // [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Whse. Inquiry", 'OnWhseInquiryOnCustomDocumentType', '', true, true)]
-    // local procedure ValidatePutAwayToBin(
-    // _DocumentType: Text;
-    // var _RequestValues: Record "MOB NS Request Element";
-    // var _ResponseElement: Record "MOB NS Resp Element";
-    // var _RegistrationTypeTracking: Text;
-    // var _IsHandled: Boolean)
-    // var
-    //     BinContent: Record "Bin Content";
-    //     PerformValidation: Boolean;
-    //     BinCode: Code[20];
-    //     LocationCode: Code[10];
-    //     ItemNo: Code[30];
-    //     Answer: Boolean;
-    //     PutAwayNo: Code[30];
-    //     lineNo: Text;
-    //     warehouseActivityHrd: Record "Warehouse Activity Header";
-    //     Location: Code[30];
-    //     MobToolbox: Codeunit "MOB Toolbox";
-    // begin
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Whse. Inquiry", 'OnWhseInquiryOnCustomDocumentType', '', true, true)]
+    local procedure ValidatePutAwayToBin(
+    _DocumentType: Text;
+    var _RequestValues: Record "MOB NS Request Element";
+    var _ResponseElement: Record "MOB NS Resp Element";
+    var _RegistrationTypeTracking: Text;
+    var _IsHandled: Boolean)
+    var
+        BinContent: Record "Bin Content";
+        PerformValidation: Boolean;
+        BinCode: Code[20];
+        LocationCode: Code[10];
+        ItemNo: Code[30];
+        Answer: Boolean;
+        PutAwayNo: Code[30];
+        lineNo: Text;
+        warehouseActivityHrd: Record "Warehouse Activity Header";
+        Location: Code[30];
+        MobToolbox: Codeunit "MOB Toolbox";
+    begin
 
-    //     if _IsHandled then
-    //         exit;
+        if _IsHandled then
+            exit;
 
-    //     if _DocumentType <> 'ValidateMyToBin' then
-    //         exit;
+        if _DocumentType <> 'ValidateMyToBin' then
+            exit;
 
-    //     BinCode := _RequestValues.Get_Bin();
-    //     LocationCode := _RequestValues.Get_Location();
-    //     lineNo := _RequestValues.Get_LineNumber();
-    //     ItemNo := _RequestValues.Get_ItemNumber();
-    //     PutAwayNo := _RequestValues.Get_OrderBackendID();
+        BinCode := _RequestValues.Get_Bin();
+        LocationCode := _RequestValues.Get_Location();
+        lineNo := _RequestValues.Get_LineNumber();
+        ItemNo := _RequestValues.Get_ItemNumber();
+        PutAwayNo := _RequestValues.Get_OrderBackendID();
 
 
-    //     warehouseActivityHrd.Reset();
-    //     warehouseActivityHrd.SetRange("No.", PutAwayNo);
-    //     if warehouseActivityHrd.FindFirst() then begin
-    //         Location := warehouseActivityHrd."Location Code";
-    //         //if PerformValidation then begin
-    //         BinContent.Reset();
-    //         BinContent.SetRange("Location Code", Location);
-    //         BinContent.SetRange("Bin Code", BinCode);
-    //         // BinContent.SetRange("Item No.", ItemNo);
-    //         BinContent.SetFilter(Quantity, '>%1', 0);
+        warehouseActivityHrd.Reset();
+        warehouseActivityHrd.SetRange("No.", PutAwayNo);
+        if warehouseActivityHrd.FindFirst() then begin
+            Location := warehouseActivityHrd."Location Code";
+            //if PerformValidation then begin
+            BinContent.Reset();
+            BinContent.SetRange("Location Code", Location);
+            BinContent.SetRange("Bin Code", BinCode);
+            // BinContent.SetRange("Item No.", ItemNo);
+            BinContent.SetFilter(Quantity, '>%1', 0);
 
-    //         if BinContent.FindFirst() then begin
+            if BinContent.FindFirst() then begin
 
-    //             MobToolbox.ErrorIfNotConfirm(_RequestValues, 'This bin already has item in it.');
+                MobToolbox.ErrorIfNotConfirm(_RequestValues, 'This bin already has item in it.');
 
-    //         end;
-    //         //Error('Test');
-    //         //end;
-    //     end;
-    //     _IsHandled := true;
-    // end;
+            end;
+            //Error('Test');
+            //end;
+        end;
+        _IsHandled := true;
+    end;
 
 
 }
