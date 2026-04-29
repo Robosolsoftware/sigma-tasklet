@@ -11,5 +11,11 @@ permissionset 50300 TaskletChanges
         codeunit "Count Module" = X,
         codeunit "Unable to Pick" = X,
         codeunit "Unable To Receive" = X,
-        codeunit "Clear Knapp Doc Queue List" = X;
+        codeunit "Clear Knapp Doc Queue List" = X,
+        report "Create & Print (PS Lable)" = X,
+        codeunit "Polar Speed Changes" = X,
+        codeunit "TC ILE Qty Handler2" = X,
+        codeunit "TC Whse Entry Handler" = X,
+        page "TC Update/Create Qty Dialog" = X,
+        page "TC Whse Entry Update Dialog" = X;
 }
