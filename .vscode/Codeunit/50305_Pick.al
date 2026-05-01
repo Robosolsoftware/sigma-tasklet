@@ -195,22 +195,22 @@ codeunit 50305 "Pick Module"
                         _Steps.Set_defaultValue(L_WarehouseActivityLine."Variant Code");
 
 
-                        // // Enabled Online Validation and setting a DocumentType
-                        // _Steps.Set_onlineValidation('ValidateMyVarintStep', true);
+                        // Enabled Online Validation and setting a DocumentType
+                        _Steps.Set_onlineValidation('ValidateMyVarintStep', true);
                     end;
                 end;
             end;
         end;
     end;
 
-    // // Add Mobile DocumentType to handle validation code
-    // [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Setup Doc. Types", 'OnAfterCreateDefaultDocumentTypes', '', true, true)]
-    // local procedure My03OnAfterCreateDefaultDocumentTypes()
-    // var
-    //     MobWmsSetupDocTypes: Codeunit "MOB WMS Setup Doc. Types";
-    // begin
-    //     MobWmsSetupDocTypes.CreateDocumentType('ValidateMyVarintStep', '', Codeunit::"MOB WMS Whse. Inquiry");
-    // end;
+    // Add Mobile DocumentType to handle validation code
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Setup Doc. Types", 'OnAfterCreateDefaultDocumentTypes', '', true, true)]
+    local procedure My03OnAfterCreateDefaultDocumentTypes()
+    var
+        MobWmsSetupDocTypes: Codeunit "MOB WMS Setup Doc. Types";
+    begin
+        MobWmsSetupDocTypes.CreateDocumentType('ValidateMyVarintStep', '', Codeunit::"MOB WMS Whse. Inquiry");
+    end;
 
     // // Implement DocumentType
     // [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Whse. Inquiry", 'OnWhseInquiryOnCustomDocumentType', '', true, true)]
@@ -219,15 +219,152 @@ codeunit 50305 "Pick Module"
     //     if _IsHandled then
     //         exit;
 
-    //     if _DocumentType = 'ValidateMyVarintStep' then
-    //         Error('MyTextStep: %1\ OrderNo: %2\ LineNo: %3',
-    //           _RequestValues.GetValue('Variant'),
-    //           _RequestValues.Get_BackendID(),
-    //           _RequestValues.Get_LineNumber());
+    //     if _DocumentType = 'ValidateMyVarintStep' then begin
+    //         Clear(G_SelectedVariantCode);
+    //         G_SelectedVariantCode := _RequestValues.GetValue('Variant');
+    //         // Error('MyTextStep: %1\ OrderNo: %2\ LineNo: %3',
+    //         //   _RequestValues.GetValue('Variant'),
+    //         //   _RequestValues.Get_BackendID(),
+    //         //   _RequestValues.Get_LineNumber());
+    //     end;
 
     //     _IsHandled := true;
     // end;
-    // //Check Free quantity Validatio------
+    // //Check Free quantity Validation
+
+
+    #Region SBB-668++
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Setup Doc. Types", 'OnAfterCreateDefaultDocumentTypes', '', true, true)]
+    local procedure My02OnAfterCreateDefaultDocumentTypes()
+    var
+        MobWmsSetupDocTypes: Codeunit "MOB WMS Setup Doc. Types";
+    begin
+        MobWmsSetupDocTypes.CreateDocumentType('ValidateFromBin', '', Codeunit::"MOB WMS Whse. Inquiry");
+    end;
+
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Whse. Inquiry", 'OnWhseInquiryOnCustomDocumentType', '', true, true)]
+    local procedure ValidatePickfromBin(_DocumentType: Text; var _RequestValues: Record "MOB NS Request Element"; var _ResponseElement: Record "MOB NS Resp Element"; var _RegistrationTypeTracking: Text; var _IsHandled: Boolean)
+    var
+        BinContent: Record "Bin Content";
+        PerformValidation: Boolean;
+        BinCode: Code[20];
+        LocationCode: Code[10];
+        ZoneCode: Code[10];
+        ItemNo: Code[30];
+        Answer: Boolean;
+        PickNo: Code[30];
+        lineNo: Integer;
+        variantCode: Code[50];
+        TotalQTY: Decimal;
+        PickQTY: Decimal;
+        warehouseActivityHrd: Record "Warehouse Activity Header";
+        warehouseActivityLine: Record "Warehouse Activity Line";
+        warehouseActivityLine1: Record "Warehouse Activity Line";
+        Location: Code[30];
+        MobToolbox: Codeunit "MOB Toolbox";
+        L_Location: Record Location;
+        L_Zone: Record Zone;
+    begin
+        //++
+        if _DocumentType = 'ValidateMyVarintStep' then begin
+            //Update Selected Variant Code in Warehouse Activity Line (This is Tempary solution, Need to check with Tasklet)++
+            warehouseActivityLine.Reset();
+            warehouseActivityLine.SetRange("No.", _RequestValues.Get_BackendID());
+            warehouseActivityLine.SetRange("Line No.", _RequestValues.Get_LineNumberAsInteger());
+            warehouseActivityLine.SetFilter("Activity Type", '%1|%2', warehouseActivityLine."Activity Type"::"Invt. Pick", warehouseActivityLine."Activity Type"::Pick);
+            if warehouseActivityLine.FindFirst() then begin
+                if warehouseActivityLine."Custom Variant Code" <> _RequestValues.GetValue('Variant') then begin
+                    warehouseActivityLine."Custom Variant Code" := _RequestValues.GetValue('Variant');
+                    warehouseActivityLine.Modify();
+                end;
+            end;
+            _IsHandled := true;
+        end;
+
+
+        if _DocumentType = 'ValidateFromBin' then begin
+            //Clear all variables
+            Clear(BinCode);
+            Clear(LocationCode);
+            Clear(ZoneCode);
+            Clear(ItemNo);
+            Clear(PickNo);
+            Clear(lineNo);
+            Clear(variantCode);
+
+            //Get the BinCode, LocationCode and Item No from RequestValue
+            BinCode := _RequestValues.Get_Bin();
+            LocationCode := _RequestValues.Get_Location();
+            ItemNo := _RequestValues.Get_ItemNumber();
+            PickNo := _RequestValues.Get_OrderBackendID();
+            lineNo := _RequestValues.Get_LineNumberAsInteger();
+            //variantCode := _RequestValues.GetValue('Variant');
+            //variantCode := _RequestValues.Get_Variant();
+            //G_SelectedVariantCode = Is updated in global variable when user enter variant code in mobile application and hit next button, and that time we are storing that value in G_SelectedVariantCode and using that value for validation here.
+
+            //++
+            warehouseActivityHrd.Reset();
+            warehouseActivityHrd.SetRange("No.", _RequestValues.Get_OrderBackendID());
+            warehouseActivityHrd.SetFilter(Type, '%1|%2', warehouseActivityHrd.Type::"Invt. Pick", warehouseActivityHrd.Type::Pick);
+            if warehouseActivityHrd.FindFirst() then begin
+                warehouseActivityLine.Reset();
+                warehouseActivityLine.SetRange("No.", warehouseActivityHrd."No.");
+                warehouseActivityLine.SetRange("Line No.", _RequestValues.Get_LineNumberAsInteger());
+                warehouseActivityLine.SetRange("Activity Type", warehouseActivityHrd.Type);
+                if warehouseActivityLine.FindFirst() then begin
+                    BinContent.Reset();
+                    BinContent.SetRange("Location Code", warehouseActivityHrd."Location Code");
+                    BinContent.SetRange("Bin Code", BinCode);
+                    BinContent.SetRange("Variant Code", warehouseActivityLine."Custom Variant Code"); //This custom variant, update at the time of selection the variant on the scanner
+                    BinContent.SetRange("Item No.", warehouseActivityLine."Item No.");
+                    if BinContent.FindFirst() then begin
+                        BinContent.CalcFields("Quantity (Base)");
+
+                        //Get total available quantity in the bin+++
+                        Clear(TotalQTY);
+                        TotalQTY := BinContent."Quantity (Base)";
+
+                        #Region Check Pick Qty++++
+                        Clear(PickQTY);
+                        warehouseActivityLine1.Reset();
+                        warehouseActivityLine1.SetFilter("No.", '<>%1', warehouseActivityHrd."No.");
+                        warehouseActivityLine1.SetRange("Action Type", warehouseActivityLine1."Action Type"::Take);
+                        warehouseActivityLine1.SetRange("Assemble to Order", false);
+                        warehouseActivityLine1.SetRange("Bin Code", BinCode);
+                        warehouseActivityLine1.SetRange("Item No.", BinContent."Item No.");
+                        warehouseActivityLine1.SetRange("Location Code", BinContent."Location Code");
+                        warehouseActivityLine1.SetRange("Variant Code", BinContent."Variant Code");
+                        if warehouseActivityLine1.FindSet() then begin
+                            warehouseActivityLine1.CalcSums(Quantity);
+                            PickQTY := warehouseActivityLine1.Quantity;
+                        end;
+
+                        warehouseActivityLine1.Reset();
+                        warehouseActivityLine1.SetFilter("No.", '%1', warehouseActivityHrd."No.");
+                        warehouseActivityLine1.SetFilter("Line No.", '<>%1', warehouseActivityLine."Line No.");
+                        warehouseActivityLine1.SetRange("Action Type", warehouseActivityLine1."Action Type"::Take);
+                        warehouseActivityLine1.SetRange("Assemble to Order", false);
+                        warehouseActivityLine1.SetRange("Bin Code", BinCode);
+                        warehouseActivityLine1.SetRange("Item No.", BinContent."Item No.");
+                        warehouseActivityLine1.SetRange("Location Code", BinContent."Location Code");
+                        warehouseActivityLine1.SetRange("Variant Code", BinContent."Variant Code");
+                        if warehouseActivityLine1.FindSet() then begin
+                            warehouseActivityLine1.CalcSums(Quantity);
+                            PickQTY += warehouseActivityLine1.Quantity;
+                        end;
+                        #EndRegion Check Pick Qty++++
+
+                        //Check if available quantity is less than pick qty+++
+                        if TotalQTY <= PickQTY then
+                            Error('Qty is allocated to other order');
+                    end else
+                        Error('Bin content does not exist');
+                end;
+            end;
+            _IsHandled := true;
+        end;
+    end;
+    #EndRegion SBB-668++
 
 
     //Update New Variant On Warehouse activity line for Check Bin Content if Bin Has been changed and other changes++++
@@ -464,114 +601,7 @@ codeunit 50305 "Pick Module"
     #EndRegion ++++
 
 
-    #Region SBB-668++
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Setup Doc. Types", 'OnAfterCreateDefaultDocumentTypes', '', true, true)]
-    local procedure My02OnAfterCreateDefaultDocumentTypes()
-    var
-        MobWmsSetupDocTypes: Codeunit "MOB WMS Setup Doc. Types";
-    begin
-        MobWmsSetupDocTypes.CreateDocumentType('ValidateFromBin', '', Codeunit::"MOB WMS Whse. Inquiry");
-    end;
 
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Whse. Inquiry", 'OnWhseInquiryOnCustomDocumentType', '', true, true)]
-    local procedure ValidatePickfromBin(_DocumentType: Text; var _RequestValues: Record "MOB NS Request Element"; var _ResponseElement: Record "MOB NS Resp Element"; var _RegistrationTypeTracking: Text; var _IsHandled: Boolean)
-    var
-        BinContent: Record "Bin Content";
-        PerformValidation: Boolean;
-        BinCode: Code[20];
-        LocationCode: Code[10];
-        ZoneCode: Code[10];
-        ItemNo: Code[30];
-        Answer: Boolean;
-        PickNo: Code[30];
-        lineNo: Integer;
-        variantCode: Code[50];
-        TotalQTY: Decimal;
-        PickQTY: Decimal;
-
-        warehouseActivityHrd: Record "Warehouse Activity Header";
-        warehouseActivityLine: Record "Warehouse Activity Line";
-        warehouseActivityLine1: Record "Warehouse Activity Line";
-        Location: Code[30];
-        MobToolbox: Codeunit "MOB Toolbox";
-        L_Location: Record Location;
-        L_Zone: Record Zone;
-    begin
-        //Error('1');
-        if _IsHandled then
-            exit;
-
-        if _DocumentType <> 'ValidateFromBin' then
-            exit;
-
-        BinCode := _RequestValues.Get_Bin();
-        LocationCode := _RequestValues.Get_Location();
-        ItemNo := _RequestValues.Get_ItemNumber();
-        PickNo := _RequestValues.Get_OrderBackendID();
-        lineNo := _RequestValues.Get_LineNumberAsInteger();
-        variantCode := _RequestValues.Get_Variant();
-
-        warehouseActivityHrd.Reset();
-        warehouseActivityHrd.SetRange("No.", _RequestValues.Get_OrderBackendID());
-        warehouseActivityHrd.SetFilter(Type, '%1|%2', warehouseActivityHrd.Type::"Invt. Pick", warehouseActivityHrd.Type::Pick);
-        if warehouseActivityHrd.FindFirst() then begin
-
-            warehouseActivityLine.Reset();
-            warehouseActivityLine.SetRange("No.", warehouseActivityHrd."No.");
-            warehouseActivityLine.SetRange("Item No.", _RequestValues.Get_ItemNumber());
-            warehouseActivityLine.SetRange("Line No.", _RequestValues.Get_LineNumberAsInteger());
-            if warehouseActivityLine.FindFirst() then begin
-
-                BinContent.Reset();
-                BinContent.SetRange("Location Code", warehouseActivityHrd."Location Code");
-                BinContent.SetRange("Bin Code", BinCode);
-                BinContent.SetRange("Item No.", warehouseActivityLine."Item No.");
-                BinContent.SetRange("Variant Code", warehouseActivityLine."Variant Code");
-                if BinContent.FindFirst() then begin
-                    BinContent.CalcFields("Quantity (Base)");
-                    TotalQTY := BinContent."Quantity (Base)";
-
-                    warehouseActivityLine1.Reset();
-                    warehouseActivityLine1.SetFilter("No.", '<>%1', warehouseActivityHrd."No.");
-                    warehouseActivityLine1.SetRange("Action Type", warehouseActivityLine1."Action Type"::Take);
-                    warehouseActivityLine1.SetRange("Assemble to Order", false);
-                    warehouseActivityLine1.SetRange("Bin Code", BinCode);
-                    warehouseActivityLine1.SetRange("Item No.", BinContent."Item No.");
-                    warehouseActivityLine1.SetRange("Location Code", BinContent."Location Code");
-                    warehouseActivityLine1.SetRange("Variant Code", BinContent."Variant Code");
-                    if warehouseActivityLine1.FindSet() then begin
-                        // repeat
-                        //     PickQTY += warehouseActivityLine1.Quantity;
-                        // until warehouseActivityLine1.Next() = 0;
-                        warehouseActivityLine1.CalcSums(Quantity);
-                        PickQTY := warehouseActivityLine1.Quantity;
-                    end;
-
-                    warehouseActivityLine1.Reset();
-                    warehouseActivityLine1.SetFilter("No.", '%1', warehouseActivityHrd."No.");
-                    warehouseActivityLine1.SetFilter("Line No.", '<>%1', warehouseActivityLine."Line No.");
-                    warehouseActivityLine1.SetRange("Action Type", warehouseActivityLine1."Action Type"::Take);
-                    warehouseActivityLine1.SetRange("Assemble to Order", false);
-                    warehouseActivityLine1.SetRange("Bin Code", BinCode);
-                    warehouseActivityLine1.SetRange("Item No.", BinContent."Item No.");
-                    warehouseActivityLine1.SetRange("Location Code", BinContent."Location Code");
-                    warehouseActivityLine1.SetRange("Variant Code", BinContent."Variant Code");
-                    if warehouseActivityLine1.FindSet() then begin
-                        // repeat
-                        //     PickQTY += warehouseActivityLine1.Quantity;
-                        // until warehouseActivityLine1.Next() = 0;
-                        warehouseActivityLine1.CalcSums(Quantity);
-                        PickQTY := warehouseActivityLine1.Quantity;
-                    end;
-
-                    if TotalQTY <= PickQTY then
-                        Error('Qty is allocated to other order');
-                end;
-            end;
-        end;
-        _IsHandled := true;
-    end;
-    #EndRegion SBB-668++
 
 
 
