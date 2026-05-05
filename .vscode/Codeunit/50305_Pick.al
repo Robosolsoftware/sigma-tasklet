@@ -268,14 +268,21 @@ codeunit 50305 "Pick Module"
         //++
         if _DocumentType = 'ValidateMyVarintStep' then begin
             //Update Selected Variant Code in Warehouse Activity Line (This is Tempary solution, Need to check with Tasklet)++
-            warehouseActivityLine.Reset();
-            warehouseActivityLine.SetRange("No.", _RequestValues.Get_BackendID());
-            warehouseActivityLine.SetRange("Line No.", _RequestValues.Get_LineNumberAsInteger());
-            warehouseActivityLine.SetFilter("Activity Type", '%1|%2', warehouseActivityLine."Activity Type"::"Invt. Pick", warehouseActivityLine."Activity Type"::Pick);
-            if warehouseActivityLine.FindFirst() then begin
-                if warehouseActivityLine."Custom Variant Code" <> _RequestValues.GetValue('Variant') then begin
-                    warehouseActivityLine."Custom Variant Code" := _RequestValues.GetValue('Variant');
-                    warehouseActivityLine.Modify();
+            warehouseActivityHrd.Reset();
+            warehouseActivityHrd.SetRange("No.", _RequestValues.Get_BackendID());
+            warehouseActivityHrd.SetFilter(Type, '%1|%2', warehouseActivityHrd.Type::"Invt. Pick", warehouseActivityHrd.Type::Pick);
+            if warehouseActivityHrd.FindFirst() then begin
+                if warehouseActivityHrd."Source Document" = warehouseActivityHrd."Source Document"::"Sales Order" then begin
+                    warehouseActivityLine.Reset();
+                    warehouseActivityLine.SetRange("No.", _RequestValues.Get_BackendID());
+                    warehouseActivityLine.SetRange("Line No.", _RequestValues.Get_LineNumberAsInteger());
+                    warehouseActivityLine.SetFilter("Activity Type", '%1|%2', warehouseActivityLine."Activity Type"::"Invt. Pick", warehouseActivityLine."Activity Type"::Pick);
+                    if warehouseActivityLine.FindFirst() then begin
+                        if warehouseActivityLine."Custom Variant Code" <> _RequestValues.GetValue('Variant') then begin
+                            warehouseActivityLine."Custom Variant Code" := _RequestValues.GetValue('Variant');
+                            warehouseActivityLine.Modify();
+                        end;
+                    end;
                 end;
             end;
             _IsHandled := true;
@@ -307,58 +314,63 @@ codeunit 50305 "Pick Module"
             warehouseActivityHrd.SetRange("No.", _RequestValues.Get_OrderBackendID());
             warehouseActivityHrd.SetFilter(Type, '%1|%2', warehouseActivityHrd.Type::"Invt. Pick", warehouseActivityHrd.Type::Pick);
             if warehouseActivityHrd.FindFirst() then begin
-                warehouseActivityLine.Reset();
-                warehouseActivityLine.SetRange("No.", warehouseActivityHrd."No.");
-                warehouseActivityLine.SetRange("Line No.", _RequestValues.Get_LineNumberAsInteger());
-                warehouseActivityLine.SetRange("Activity Type", warehouseActivityHrd.Type);
-                if warehouseActivityLine.FindFirst() then begin
-                    BinContent.Reset();
-                    BinContent.SetRange("Location Code", warehouseActivityHrd."Location Code");
-                    BinContent.SetRange("Bin Code", BinCode);
-                    BinContent.SetRange("Variant Code", warehouseActivityLine."Custom Variant Code"); //This custom variant, update at the time of selection the variant on the scanner
-                    BinContent.SetRange("Item No.", warehouseActivityLine."Item No.");
-                    if BinContent.FindFirst() then begin
-                        BinContent.CalcFields("Quantity (Base)");
+                if warehouseActivityHrd."Source Document" = warehouseActivityHrd."Source Document"::"Sales Order" then begin
+                    warehouseActivityLine.Reset();
+                    warehouseActivityLine.SetRange("No.", warehouseActivityHrd."No.");
+                    warehouseActivityLine.SetRange("Line No.", _RequestValues.Get_LineNumberAsInteger());
+                    warehouseActivityLine.SetRange("Activity Type", warehouseActivityHrd.Type);
+                    if warehouseActivityLine.FindFirst() then begin
+                        BinContent.Reset();
+                        BinContent.SetRange("Location Code", warehouseActivityHrd."Location Code");
+                        BinContent.SetRange("Bin Code", BinCode);
+                        if warehouseActivityHrd."Source Document" = warehouseActivityHrd."Source Document"::"Sales Order" then
+                            BinContent.SetRange("Variant Code", warehouseActivityLine."Custom Variant Code") //This custom variant, update at the time of selection the variant on the scanner
+                        else
+                            BinContent.SetRange("Variant Code", warehouseActivityLine."Variant Code");
+                        BinContent.SetRange("Item No.", warehouseActivityLine."Item No.");
+                        if BinContent.FindFirst() then begin
+                            BinContent.CalcFields("Quantity (Base)");
 
-                        //Get total available quantity in the bin+++
-                        Clear(TotalQTY);
-                        TotalQTY := BinContent."Quantity (Base)";
+                            //Get total available quantity in the bin+++
+                            Clear(TotalQTY);
+                            TotalQTY := BinContent."Quantity (Base)";
 
-                        #Region Check Pick Qty++++
-                        Clear(PickQTY);
-                        warehouseActivityLine1.Reset();
-                        warehouseActivityLine1.SetFilter("No.", '<>%1', warehouseActivityHrd."No.");
-                        warehouseActivityLine1.SetRange("Action Type", warehouseActivityLine1."Action Type"::Take);
-                        warehouseActivityLine1.SetRange("Assemble to Order", false);
-                        warehouseActivityLine1.SetRange("Bin Code", BinCode);
-                        warehouseActivityLine1.SetRange("Item No.", BinContent."Item No.");
-                        warehouseActivityLine1.SetRange("Location Code", BinContent."Location Code");
-                        warehouseActivityLine1.SetRange("Variant Code", BinContent."Variant Code");
-                        if warehouseActivityLine1.FindSet() then begin
-                            warehouseActivityLine1.CalcSums(Quantity);
-                            PickQTY := warehouseActivityLine1.Quantity;
-                        end;
+                            #Region Check Pick Qty++++
+                            Clear(PickQTY);
+                            warehouseActivityLine1.Reset();
+                            warehouseActivityLine1.SetFilter("No.", '<>%1', warehouseActivityHrd."No.");
+                            warehouseActivityLine1.SetRange("Action Type", warehouseActivityLine1."Action Type"::Take);
+                            warehouseActivityLine1.SetRange("Assemble to Order", false);
+                            warehouseActivityLine1.SetRange("Bin Code", BinCode);
+                            warehouseActivityLine1.SetRange("Item No.", BinContent."Item No.");
+                            warehouseActivityLine1.SetRange("Location Code", BinContent."Location Code");
+                            warehouseActivityLine1.SetRange("Variant Code", BinContent."Variant Code");
+                            if warehouseActivityLine1.FindSet() then begin
+                                warehouseActivityLine1.CalcSums(Quantity);
+                                PickQTY := warehouseActivityLine1.Quantity;
+                            end;
 
-                        warehouseActivityLine1.Reset();
-                        warehouseActivityLine1.SetFilter("No.", '%1', warehouseActivityHrd."No.");
-                        warehouseActivityLine1.SetFilter("Line No.", '<>%1', warehouseActivityLine."Line No.");
-                        warehouseActivityLine1.SetRange("Action Type", warehouseActivityLine1."Action Type"::Take);
-                        warehouseActivityLine1.SetRange("Assemble to Order", false);
-                        warehouseActivityLine1.SetRange("Bin Code", BinCode);
-                        warehouseActivityLine1.SetRange("Item No.", BinContent."Item No.");
-                        warehouseActivityLine1.SetRange("Location Code", BinContent."Location Code");
-                        warehouseActivityLine1.SetRange("Variant Code", BinContent."Variant Code");
-                        if warehouseActivityLine1.FindSet() then begin
-                            warehouseActivityLine1.CalcSums(Quantity);
-                            PickQTY += warehouseActivityLine1.Quantity;
-                        end;
-                        #EndRegion Check Pick Qty++++
+                            warehouseActivityLine1.Reset();
+                            warehouseActivityLine1.SetFilter("No.", '%1', warehouseActivityHrd."No.");
+                            warehouseActivityLine1.SetFilter("Line No.", '<>%1', warehouseActivityLine."Line No.");
+                            warehouseActivityLine1.SetRange("Action Type", warehouseActivityLine1."Action Type"::Take);
+                            warehouseActivityLine1.SetRange("Assemble to Order", false);
+                            warehouseActivityLine1.SetRange("Bin Code", BinCode);
+                            warehouseActivityLine1.SetRange("Item No.", BinContent."Item No.");
+                            warehouseActivityLine1.SetRange("Location Code", BinContent."Location Code");
+                            warehouseActivityLine1.SetRange("Variant Code", BinContent."Variant Code");
+                            if warehouseActivityLine1.FindSet() then begin
+                                warehouseActivityLine1.CalcSums(Quantity);
+                                PickQTY += warehouseActivityLine1.Quantity;
+                            end;
+                            #EndRegion Check Pick Qty++++
 
-                        //Check if available quantity is less than pick qty+++
-                        if TotalQTY <= PickQTY then
-                            Error('Qty is allocated to other order');
-                    end else
-                        Error('Bin content does not exist');
+                            //Check if available quantity is less than pick qty+++
+                            if TotalQTY <= PickQTY then
+                                Error('Qty is allocated to other order');
+                        end else
+                            Error('Bin content does not exist');
+                    end;
                 end;
             end;
             _IsHandled := true;
