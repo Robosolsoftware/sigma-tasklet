@@ -15,6 +15,7 @@ codeunit 50313 "TC Whse Entry Handler"
     local procedure UpdateQuantity(var WhseEntry: Record "Warehouse Entry"; Qty: Decimal)
     begin
         WhseEntry.Validate(Quantity, Qty);
+        WhseEntry.Validate("Qty. (Base)", Qty);
         WhseEntry.Modify(true);
     end;
 
@@ -47,6 +48,7 @@ codeunit 50313 "TC Whse Entry Handler"
         end;
 
         NewWhseEntry.Validate(Quantity, Qty);
+        NewWhseEntry.Validate("Qty. (Base)", Qty);
         NewWhseEntry."Registering Date" := Today();
         NewWhseEntry."User ID" := UserId();
         NewWhseEntry."Whse. Document Type" := NewWhseEntry."Whse. Document Type"::" ";
