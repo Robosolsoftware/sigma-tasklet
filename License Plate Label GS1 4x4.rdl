@@ -22,43 +22,6 @@
       <rd:DataSourceID>237abaa4-eddb-44fb-90c8-75da936f2270</rd:DataSourceID>
     </DataSource>
   </DataSources>
-  <DataSets>
-    <DataSet Name="DataSet_Result">
-      <Query>
-        <DataSourceName>DataSource</DataSourceName>
-        <CommandText />
-      </Query>
-      <Fields>
-        <Field Name="No_">
-          <DataField>No_</DataField>
-        </Field>
-        <Field Name="EncodedBarcode">
-          <DataField>EncodedBarcode</DataField>
-        </Field>
-        <Field Name="BarcodeTxt">
-          <DataField>BarcodeTxt</DataField>
-        </Field>
-        <Field Name="GS1EncodedBarcode">
-          <DataField>GS1EncodedBarcode</DataField>
-        </Field>
-        <Field Name="GS1BarcodeTxt">
-          <DataField>GS1BarcodeTxt</DataField>
-        </Field>
-        <Field Name="CompanyName">
-          <DataField>CompanyName</DataField>
-        </Field>
-        <Field Name="CompanyAddress">
-          <DataField>CompanyAddress</DataField>
-        </Field>
-        <Field Name="SourceName">
-          <DataField>SourceName</DataField>
-        </Field>
-        <Field Name="SourceAddress">
-          <DataField>SourceAddress</DataField>
-        </Field>
-      </Fields>
-    </DataSet>
-  </DataSets>
   <ReportSections>
     <ReportSection>
       <Body>
@@ -225,12 +188,6 @@
       </Page>
     </ReportSection>
   </ReportSections>
-  <ReportParametersLayout>
-    <GridLayoutDefinition>
-      <NumberOfColumns>4</NumberOfColumns>
-      <NumberOfRows>2</NumberOfRows>
-    </GridLayoutDefinition>
-  </ReportParametersLayout>
   <Code>Public Function BlankZero(ByVal Value As Decimal)
     if Value = 0 then
         Return ""
@@ -270,4 +227,41 @@ End Function
   <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
   <rd:ReportUnitType>Inch</rd:ReportUnitType>
   <rd:ReportID>0eeb6585-38ae-40f1-885b-8d50088d51b4</rd:ReportID>
+  <DataSets>
+    <DataSet Name="DataSet_Result">
+      <Fields>
+        <Field Name="No_">
+          <DataField>No_</DataField>
+        </Field>
+        <Field Name="EncodedBarcode">
+          <DataField>EncodedBarcode</DataField>
+        </Field>
+        <Field Name="BarcodeTxt">
+          <DataField>BarcodeTxt</DataField>
+        </Field>
+        <Field Name="GS1EncodedBarcode">
+          <DataField>GS1EncodedBarcode</DataField>
+        </Field>
+        <Field Name="GS1BarcodeTxt">
+          <DataField>GS1BarcodeTxt</DataField>
+        </Field>
+        <Field Name="CompanyName">
+          <DataField>CompanyName</DataField>
+        </Field>
+        <Field Name="CompanyAddress">
+          <DataField>CompanyAddress</DataField>
+        </Field>
+        <Field Name="SourceName">
+          <DataField>SourceName</DataField>
+        </Field>
+        <Field Name="SourceAddress">
+          <DataField>SourceAddress</DataField>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>DataSource</DataSourceName>
+        <CommandText />
+      </Query>
+    </DataSet>
+  </DataSets>
 </Report>
